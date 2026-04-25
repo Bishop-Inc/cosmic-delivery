@@ -1,21 +1,22 @@
 /* ============================================
-   COSMIC DELIVERY CO. — Retro Arcade Styles
+   COSMIC DELIVERY CO. — Soft Anime/Kawaii Styles
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
-  --bg:       #1a1c2c;
-  --green:    #a7f070;
-  --white:    #f4f4f4;
-  --red:      #b13e53;
-  --hgreen:   #38b764;
-  --purple:   #7e2553;
-  --yellow:   #ffcd75;
-  --cyan:     #73eff7;
-  --grey:     #94b0c2;
-  --darkgrey: #566c86;
-  --panel:    rgba(10, 11, 20, 0.85);
+  --bg:       #0d0b1a;
+  --pink:     #f0c4e8;
+  --lavender: #e8e0f0;
+  --accent:   #ff6b9d;
+  --purple:   #c084fc;
+  --success:  #86efac;
+  --gold:     #fbbf24;
+  --danger:   #f87171;
+  --white:    #f0c4e8;
+  --grey:     #c4b5d4;
+  --darkgrey: #7c6a8c;
+  --panel:    rgba(13, 11, 26, 0.88);
 }
 
 * {
@@ -30,7 +31,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   font-family: 'Press Start 2P', monospace;
-  color: var(--green);
+  color: var(--pink);
 }
 
 /* ---- MOBILE NOTICE ---- */
@@ -38,8 +39,8 @@ html, body {
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0;
-  background: var(--red);
-  color: var(--white);
+  background: var(--danger);
+  color: var(--lavender);
   text-align: center;
   padding: 8px;
   font-size: 8px;
@@ -70,9 +71,20 @@ html, body {
   background: var(--bg);
   pointer-events: all;
   overflow-y: auto;
+  transition: opacity 0.3s ease;
 }
 .screen.active {
   display: flex;
+}
+
+/* ---- BACKGROUND RADIAL GLOW ---- */
+.screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(192, 132, 252, 0.12) 0%, rgba(255, 107, 157, 0.06) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ---- SCANLINES ---- */
@@ -83,8 +95,8 @@ html, body {
     to bottom,
     transparent 0px,
     transparent 2px,
-    rgba(0,0,0,0.18) 2px,
-    rgba(0,0,0,0.18) 4px
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
   );
   pointer-events: none;
   z-index: 1;
@@ -108,17 +120,18 @@ html, body {
 }
 .title-main {
   font-size: clamp(18px, 5vw, 36px);
-  color: var(--green);
-  text-shadow:
-    0 0 10px var(--hgreen),
-    0 0 20px var(--hgreen),
-    0 0 40px var(--hgreen);
+  background: linear-gradient(135deg, #ff6b9d, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 12px rgba(255, 107, 157, 0.5));
   letter-spacing: 4px;
   line-height: 1.6;
 }
 .title-sub {
   font-size: clamp(6px, 1.5vw, 9px);
-  color: var(--grey);
+  color: var(--purple);
   margin-top: 10px;
   letter-spacing: 2px;
 }
@@ -135,23 +148,33 @@ html, body {
 
 .form-divider {
   font-size: 10px;
-  color: var(--darkgrey);
+  color: var(--accent);
   align-self: center;
   padding: 8px;
 }
+.form-divider::before {
+  content: '♥ ';
+  color: var(--accent);
+}
+.form-divider::after {
+  content: ' ♥';
+  color: var(--accent);
+}
 
 .form-box {
-  background: rgba(0,0,0,0.5);
-  border: 1px solid var(--darkgrey);
+  background: rgba(13, 11, 26, 0.7);
+  border: 1px solid var(--purple);
+  border-radius: 8px;
   padding: 20px;
   min-width: 220px;
   max-width: 280px;
   flex: 1;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.15), 0 0 32px rgba(255, 107, 157, 0.08);
 }
 
 .form-title {
   font-size: 8px;
-  color: var(--cyan);
+  color: var(--accent);
   margin-bottom: 14px;
   letter-spacing: 1px;
 }
@@ -170,20 +193,21 @@ label {
 }
 
 input[type="text"] {
-  background: #0a0b14;
+  background: rgba(13, 11, 26, 0.8);
   border: 1px solid var(--darkgrey);
-  color: var(--green);
+  border-radius: 8px;
+  color: var(--pink);
   font-family: 'Press Start 2P', monospace;
   font-size: 9px;
   padding: 8px 10px;
   outline: none;
   width: 100%;
-  caret-color: var(--green);
-  transition: border-color 0.15s;
+  caret-color: var(--accent);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 input[type="text"]:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 6px rgba(167,240,112,0.3);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.35);
 }
 input[type="text"]::placeholder {
   color: var(--darkgrey);
@@ -195,19 +219,20 @@ input[type="text"]::placeholder {
   font-family: 'Press Start 2P', monospace;
   font-size: 9px;
   padding: 10px 16px;
-  border: 2px solid var(--green);
-  background: transparent;
-  color: var(--green);
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ff6b9d, #c084fc);
+  color: #fff;
   cursor: pointer;
   letter-spacing: 1px;
-  transition: background 0.1s, color 0.1s, box-shadow 0.1s;
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
   width: 100%;
-  text-transform: uppercase;
+  text-transform: lowercase;
+  box-shadow: 0 0 10px rgba(255, 107, 157, 0.3);
 }
 .btn:hover, .btn:focus {
-  background: var(--green);
-  color: var(--bg);
-  box-shadow: 0 0 12px rgba(167,240,112,0.6), 0 0 24px rgba(167,240,112,0.3);
+  filter: brightness(1.15);
+  box-shadow: 0 0 16px rgba(255, 107, 157, 0.6), 0 0 32px rgba(192, 132, 252, 0.3);
   outline: none;
 }
 .btn:active {
@@ -223,20 +248,23 @@ input[type="text"]::placeholder {
 /* ---- ERROR ---- */
 .error-msg {
   font-size: 8px;
-  color: var(--red);
+  color: var(--danger);
   text-align: center;
   padding: 8px;
-  background: rgba(177,62,83,0.15);
-  border: 1px solid var(--red);
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid var(--danger);
+  border-radius: 8px;
 }
 
 /* ---- HIGHSCORES ---- */
 .highscores-box {
   width: 100%;
   max-width: 500px;
-  background: rgba(0,0,0,0.4);
+  background: rgba(13, 11, 26, 0.6);
   border: 1px solid var(--darkgrey);
+  border-radius: 8px;
   padding: 16px;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.1);
 }
 .highscores-list {
   margin-top: 8px;
@@ -257,11 +285,11 @@ input[type="text"]::placeholder {
   font-size: 7px;
   color: var(--grey);
   padding: 4px 0;
-  border-bottom: 1px solid rgba(86,108,134,0.3);
+  border-bottom: 1px solid rgba(124, 106, 140, 0.3);
 }
-.hs-rank { color: var(--yellow); width: 24px; }
-.hs-name { flex: 1; padding: 0 8px; color: var(--white); }
-.hs-score { color: var(--green); }
+.hs-rank { color: var(--gold); width: 24px; }
+.hs-name { flex: 1; padding: 0 8px; color: var(--lavender); }
+.hs-score { color: var(--accent); }
 
 /* ---- LOBBY SCREEN ---- */
 .lobby-content {
@@ -278,17 +306,18 @@ input[type="text"]::placeholder {
 
 .lobby-title {
   font-size: clamp(14px, 3vw, 20px);
-  color: var(--green);
-  text-shadow: 0 0 12px var(--hgreen);
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(255, 107, 157, 0.6);
   letter-spacing: 3px;
 }
 
 .room-code-display {
   text-align: center;
-  background: rgba(0,0,0,0.5);
-  border: 2px solid var(--cyan);
+  background: rgba(13, 11, 26, 0.7);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
   padding: 20px 32px;
-  box-shadow: 0 0 16px rgba(115,239,247,0.2);
+  box-shadow: 0 0 16px rgba(255, 107, 157, 0.25);
 }
 .room-code-label {
   font-size: 8px;
@@ -298,13 +327,13 @@ input[type="text"]::placeholder {
 }
 .room-code-value {
   font-size: clamp(24px, 6vw, 40px);
-  color: var(--cyan);
+  color: var(--accent);
   letter-spacing: 10px;
-  text-shadow: 0 0 16px rgba(115,239,247,0.7);
+  text-shadow: 0 0 16px rgba(255, 107, 157, 0.7);
 }
 .room-code-hint {
   font-size: 7px;
-  color: var(--yellow);
+  color: var(--purple);
   margin-top: 8px;
   letter-spacing: 1px;
 }
@@ -319,20 +348,26 @@ input[type="text"]::placeholder {
 .player-slot {
   flex: 1;
   max-width: 200px;
-  background: rgba(0,0,0,0.4);
+  background: rgba(13, 11, 26, 0.6);
   border: 1px solid var(--darkgrey);
+  border-radius: 8px;
   padding: 16px;
   text-align: center;
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.1);
 }
 .slot-role {
   font-size: 8px;
-  color: var(--yellow);
+  color: var(--gold);
   margin-bottom: 8px;
   letter-spacing: 2px;
 }
+.slot-role::before {
+  content: '♥ ';
+  color: var(--accent);
+}
 .slot-name {
   font-size: 10px;
-  color: var(--white);
+  color: var(--lavender);
   margin-bottom: 6px;
   min-height: 16px;
 }
@@ -341,7 +376,7 @@ input[type="text"]::placeholder {
   color: var(--darkgrey);
 }
 .slot-status.ready {
-  color: var(--hgreen);
+  color: var(--success);
 }
 
 .lobby-waiting {
@@ -369,22 +404,22 @@ input[type="text"]::placeholder {
 }
 .trans-big {
   font-size: clamp(16px, 4vw, 28px);
-  color: var(--yellow);
-  text-shadow: 0 0 16px rgba(255,205,117,0.8);
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(251, 191, 36, 0.6);
   animation: pulseglow 0.8s ease-in-out infinite alternate;
 }
 .trans-bonus {
   font-size: clamp(12px, 3vw, 20px);
-  color: var(--hgreen);
+  color: var(--success);
 }
 .trans-role {
   font-size: clamp(10px, 2.5vw, 16px);
-  color: var(--cyan);
+  color: var(--purple);
   margin-top: 8px;
 }
 .trans-role-new {
   font-size: clamp(12px, 3vw, 18px);
-  color: var(--white);
+  color: var(--lavender);
 }
 .trans-caption {
   font-size: 8px;
@@ -401,8 +436,8 @@ input[type="text"]::placeholder {
 }
 
 @keyframes pulseglow {
-  from { text-shadow: 0 0 8px rgba(255,205,117,0.5); }
-  to   { text-shadow: 0 0 24px rgba(255,205,117,1), 0 0 48px rgba(255,205,117,0.5); }
+  from { text-shadow: 0 0 8px rgba(251, 191, 36, 0.4); }
+  to   { text-shadow: 0 0 24px rgba(251, 191, 36, 0.9), 0 0 48px rgba(255, 107, 157, 0.4); }
 }
 
 /* ---- DEATH / VICTORY ---- */
@@ -422,12 +457,12 @@ input[type="text"]::placeholder {
   animation: pulseglow 1s ease-in-out infinite alternate;
 }
 .end-title.red {
-  color: var(--red);
-  text-shadow: 0 0 16px rgba(177,62,83,0.8);
+  color: var(--danger);
+  text-shadow: 0 0 16px rgba(248, 113, 113, 0.7);
 }
 .end-title.gold {
-  color: var(--yellow);
-  text-shadow: 0 0 16px rgba(255,205,117,0.8);
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(251, 191, 36, 0.7);
 }
 .end-caption {
   font-size: 8px;
@@ -444,12 +479,12 @@ input[type="text"]::placeholder {
 }
 .end-score {
   font-size: clamp(24px, 6vw, 48px);
-  color: var(--green);
-  text-shadow: 0 0 16px rgba(167,240,112,0.7);
+  color: var(--accent);
+  text-shadow: 0 0 16px rgba(255, 107, 157, 0.7);
 }
 .end-deliveries {
   font-size: 10px;
-  color: var(--cyan);
+  color: var(--purple);
 }
 
 /* ---- DISCONNECTED ---- */
@@ -465,11 +500,11 @@ input[type="text"]::placeholder {
 }
 .disc-icon {
   font-size: 48px;
-  color: var(--yellow);
+  color: var(--gold);
 }
 .disc-title {
   font-size: clamp(16px, 4vw, 24px);
-  color: var(--red);
+  color: var(--danger);
 }
 .disc-msg {
   font-size: 9px;
@@ -486,10 +521,10 @@ input[type="text"]::placeholder {
 #canvas-wrapper {
   position: fixed;
   inset: 0;
-  display: none; /* shown when playing */
+  display: none;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: #0d0b1a;
 }
 #canvas-wrapper.active {
   display: flex;
@@ -499,7 +534,6 @@ input[type="text"]::placeholder {
   display: block;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  /* Size set by JS to maintain aspect ratio */
 }
 
 /* ---- HUD ---- */
@@ -508,67 +542,75 @@ input[type="text"]::placeholder {
   inset: 0;
   pointer-events: none;
   font-family: 'Press Start 2P', monospace;
-  font-size: 0; /* children set own size */
+  font-size: 0;
 }
 
 .hud-score {
   position: absolute;
   top: 8px; left: 12px;
   font-size: clamp(6px, 1.2vw, 9px);
-  color: var(--green);
+  color: var(--accent);
   background: var(--panel);
   padding: 4px 8px;
   letter-spacing: 1px;
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(255, 107, 157, 0.2);
 }
 .hud-sector {
   position: absolute;
   top: 8px; left: 50%;
   transform: translateX(-50%);
   font-size: clamp(5px, 1vw, 8px);
-  color: var(--yellow);
+  color: var(--gold);
   background: var(--panel);
   padding: 4px 10px;
   letter-spacing: 1px;
   white-space: nowrap;
+  border-radius: 4px;
 }
 .hud-timer {
   position: absolute;
   top: 30px; left: 50%;
   transform: translateX(-50%);
   font-size: clamp(7px, 1.3vw, 10px);
-  color: var(--cyan);
+  color: var(--gold);
   background: var(--panel);
   padding: 3px 8px;
+  border-radius: 4px;
 }
 .hud-role {
   position: absolute;
   top: 8px; right: 12px;
   font-size: clamp(6px, 1.2vw, 9px);
-  color: var(--cyan);
+  color: var(--purple);
   background: var(--panel);
   padding: 4px 8px;
   letter-spacing: 1px;
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.2);
 }
 .hud-lives {
   position: absolute;
   top: 32px; left: 12px;
   font-size: clamp(5px, 1vw, 8px);
-  color: var(--red);
+  color: var(--danger);
   background: var(--panel);
   padding: 3px 8px;
+  border-radius: 4px;
 }
 .hud-shield {
   position: absolute;
   top: 56px; left: 12px;
   font-size: clamp(5px, 1vw, 8px);
-  color: var(--cyan);
-  background: rgba(10,11,20,0.9);
-  border: 1px solid var(--cyan);
+  color: var(--purple);
+  background: rgba(13, 11, 26, 0.9);
+  border: 1px solid var(--purple);
   padding: 3px 8px;
+  border-radius: 4px;
   animation: blink 0.5s step-end infinite;
 }
 
-/* ---- CAPTAIN DIALOGUE ---- */
+/* ---- CAPTAIN / NAGATORO DIALOGUE ---- */
 #captain-dialogue {
   position: absolute;
   bottom: 12px; left: 50%;
@@ -576,16 +618,28 @@ input[type="text"]::placeholder {
   width: min(90%, 460px);
   display: flex;
   gap: 10px;
-  background: rgba(5,6,15,0.92);
-  border: 2px solid var(--green);
+  background: rgba(13, 11, 26, 0.88);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
   padding: 10px 14px;
-  box-shadow: 0 0 12px rgba(167,240,112,0.3), inset 0 0 8px rgba(0,0,0,0.5);
+  box-shadow: 0 0 16px rgba(255, 107, 157, 0.3), inset 0 0 8px rgba(0,0,0,0.4);
+}
+#captain-dialogue::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid var(--accent);
 }
 
 .captain-portrait {
   flex-shrink: 0;
   width: 48px; height: 48px;
-  border: 1px solid var(--darkgrey);
+  border: 1px solid var(--purple);
+  border-radius: 6px;
   background: #0a0b14;
   image-rendering: pixelated;
 }
@@ -599,15 +653,59 @@ input[type="text"]::placeholder {
 .captain-name {
   font-family: 'Press Start 2P', monospace;
   font-size: 7px;
-  color: var(--yellow);
+  color: var(--accent);
   letter-spacing: 1px;
 }
 .captain-text {
   font-family: 'Press Start 2P', monospace;
   font-size: 7px;
-  color: var(--white);
+  color: var(--lavender);
   line-height: 1.7;
   min-height: 28px;
+}
+
+/* ---- STICKER SYSTEM ---- */
+.sticker-popup {
+  width: 120px;
+  height: auto;
+  animation: stickerBounce 0.5s ease-out;
+}
+
+.sticker-float {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.sticker-float img {
+  width: 150px;
+  height: auto;
+  animation: stickerFloat 2s ease-in-out infinite;
+}
+
+@keyframes stickerBounce {
+  0%   { transform: scale(0) rotate(-10deg); }
+  50%  { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes stickerFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.08); }
 }
 
 /* ---- UTILITY ANIMATIONS ---- */

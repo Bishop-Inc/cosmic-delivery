@@ -136,14 +136,30 @@
   }
 
   /* -------------------------
+     STICKER POPUP SYSTEM
+  ------------------------- */
+  function showStickerPopup(src, duration) {
+    var el = document.getElementById('sticker-float');
+    var img = document.getElementById('sticker-float-img');
+    img.src = src;
+    el.style.display = 'block';
+    el.style.opacity = '1';
+    setTimeout(function () {
+      el.style.opacity = '0';
+      setTimeout(function () { el.style.display = 'none'; }, 500);
+    }, duration || 2000);
+  }
+
+  /* -------------------------
      STAR FIELD INIT
   ------------------------- */
   function initStars() {
     stars = [];
+    // Layer 1: distant tiny stars
     var layers = [
-      { count: 40, speed: 0.1, size: 0.5, alpha: 0.4 },
-      { count: 25, speed: 0.25, size: 1,   alpha: 0.6 },
-      { count: 12, speed: 0.5,  size: 1.5, alpha: 0.9 }
+      { count: 40, speed: 0.1, size: 0.5, alpha: 0.35, type: 'normal' },
+      { count: 25, speed: 0.25, size: 1,   alpha: 0.55, type: 'normal' },
+      { count: 12, speed: 0.5,  size: 1.5, alpha: 0.85, type: 'normal' }
     ];
     layers.forEach(function (l) {
       for (var i = 0; i < l.count; i++) {
@@ -152,10 +168,24 @@
           y: Math.random() * LOGICAL_H,
           speed: l.speed,
           size: l.size,
-          alpha: l.alpha
+          alpha: l.alpha,
+          type: 'normal'
         });
       }
     });
+
+    // Layer 4: heart-stars — tiny pink dots that twinkle
+    for (var i = 0; i < 7; i++) {
+      stars.push({
+        x: Math.random() * LOGICAL_W,
+        y: Math.random() * LOGICAL_H,
+        speed: 0.15,
+        size: 1.5,
+        alpha: 0.6,
+        type: 'heart',
+        phase: Math.random() * Math.PI * 2  // random start phase for twinkling
+      });
+    }
   }
   initStars();
 
@@ -163,14 +193,28 @@
     stars.forEach(function (s) {
       s.x -= s.speed * dt * 0.06;
       if (s.x < 0) s.x += LOGICAL_W;
+      // Update heart-star twinkling phase
+      if (s.type === 'heart') {
+        s.phase = (s.phase || 0) + dt * 0.004;
+      }
     });
   }
 
   function drawStars() {
     stars.forEach(function (s) {
-      ctx.globalAlpha = s.alpha;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
+      if (s.type === 'heart') {
+        // Pink twinkling dots
+        var twinkleAlpha = 0.3 + 0.5 * Math.abs(Math.sin(s.phase || 0));
+        ctx.globalAlpha = twinkleAlpha;
+        ctx.fillStyle = '#ff6b9d';
+        ctx.beginPath();
+        ctx.arc(Math.round(s.x), Math.round(s.y), s.size, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.globalAlpha = s.alpha;
+        ctx.fillStyle = '#e8e0f0';
+        ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
+      }
     });
     ctx.globalAlpha = 1;
   }
@@ -179,7 +223,7 @@
      PARTICLES
   ------------------------- */
   function spawnExplosion(x, y, color, count) {
-    color = color || '#ffcd75';
+    color = color || '#ff6b9d';  // default pink instead of yellow
     count = count || 10;
     for (var i = 0; i < count; i++) {
       var angle = (Math.PI * 2 / count) * i + Math.random() * 0.4;
@@ -206,7 +250,7 @@
         vy: Math.sin(angle) * speed,
         life: 0.6, decay: 0.04 + Math.random() * 0.04,
         size: 1,
-        color: '#f4f4f4'
+        color: '#f0c4e8'
       });
     }
   }
@@ -256,20 +300,20 @@
     ctx.save();
     ctx.translate(Math.round(x), Math.round(y));
 
-    // Shield
+    // Shield — pink ring instead of blue
     if (hasShield) {
       ctx.beginPath();
       ctx.arc(0, 0, 12, 0, Math.PI * 2);
-      ctx.strokeStyle = flashWhite ? '#ffffff' : '#73eff7';
+      ctx.strokeStyle = flashWhite ? '#ffffff' : '#ff6b9d';
       ctx.lineWidth = 2;
       ctx.globalAlpha = 0.7;
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
-    // Body — arrow pointing right
-    ctx.strokeStyle = flashWhite ? '#ffffff' : '#a7f070';
-    ctx.fillStyle = flashWhite ? '#ffffff' : '#38b764';
+    // Body — softer rounded triangle, pink palette
+    ctx.strokeStyle = flashWhite ? '#ffffff' : '#f0c4e8';
+    ctx.fillStyle = flashWhite ? '#ffffff' : '#ff6b9d';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(10, 0);
@@ -280,10 +324,19 @@
     ctx.fill();
     ctx.stroke();
 
-    // Engine glow
-    ctx.fillStyle = flashWhite ? '#ffffff' : '#ffcd75';
-    ctx.globalAlpha = 0.8;
-    ctx.fillRect(-8, -2, 4, 4);
+    // Engine sparkle trail — tiny gold/pink dots instead of orange rectangle
+    if (!flashWhite) {
+      var sparkColors = ['#fbbf24', '#ff6b9d', '#c084fc', '#f0c4e8'];
+      for (var i = 0; i < 4; i++) {
+        ctx.globalAlpha = 0.6 - i * 0.12;
+        ctx.fillStyle = sparkColors[i % sparkColors.length];
+        ctx.fillRect(-8 - i * 2, -1 + (Math.random() * 2 - 1), 2, 2);
+      }
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.8;
+      ctx.fillRect(-8, -2, 4, 4);
+    }
     ctx.globalAlpha = 1;
 
     ctx.restore();
@@ -294,10 +347,11 @@
     var y = Math.round(ast.y);
     var r = ast.radius || 8;
 
+    // Softer pastel colors
     var color;
-    if (r > 14) color = '#73eff7';
-    else if (r > 8) color = '#94b0c2';
-    else color = '#566c86';
+    if (r > 14) color = '#b8b0d4';      // pastel lavender (was harsh cyan)
+    else if (r > 8) color = '#9b8fb5';  // soft purple-grey (was grey)
+    else color = '#7a6e8a';             // muted purple (was dark grey)
 
     ctx.save();
     ctx.translate(x, y);
@@ -320,6 +374,26 @@
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+
+    // Kawaii face on medium and large asteroids
+    if (r > 8) {
+      ctx.globalAlpha = 0.9;
+      // Eyes — two white dots
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-r * 0.2, -r * 0.1, Math.max(1, r * 0.1), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(r * 0.2, -r * 0.1, Math.max(1, r * 0.1), 0, Math.PI * 2);
+      ctx.fill();
+      // Small mouth
+      ctx.beginPath();
+      ctx.arc(0, r * 0.1, Math.max(1, r * 0.12), 0, Math.PI);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
     ctx.globalAlpha = 1;
     ctx.restore();
   }
@@ -357,8 +431,9 @@
   function drawBullet(b) {
     var x = Math.round(b.x);
     var y = Math.round(b.y);
-    var color = b.fromEnemy ? '#b13e53' : '#ffcd75';
-    var trailColor = b.fromEnemy ? 'rgba(177,62,83,0.4)' : 'rgba(255,205,117,0.4)';
+    // Player bullets: pink dots; enemy bullets: soft red (unchanged logic)
+    var color = b.fromEnemy ? '#f87171' : '#ff6b9d';
+    var trailColor = b.fromEnemy ? 'rgba(248,113,113,0.4)' : 'rgba(255,107,157,0.4)';
 
     // Trail
     ctx.strokeStyle = trailColor;
@@ -373,7 +448,9 @@
 
     // Dot
     ctx.fillStyle = color;
-    ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function drawPowerup(pw, t) {
@@ -383,13 +460,25 @@
     var pulse = 0.7 + 0.3 * Math.sin(t * 0.004);
 
     var color, letter;
-    if (pw.type === 'shield')  { color = '#73eff7'; letter = 'S'; }
-    else if (pw.type === 'spread') { color = '#ffcd75'; letter = 'W'; }
-    else if (pw.type === 'repair') { color = '#a7f070'; letter = 'R'; }
-    else { color = '#f4f4f4'; letter = '?'; }
+    if (pw.type === 'shield')  { color = '#c084fc'; letter = 'S'; }
+    else if (pw.type === 'spread') { color = '#fbbf24'; letter = 'W'; }
+    else if (pw.type === 'repair') { color = '#86efac'; letter = 'R'; }
+    else { color = '#f0c4e8'; letter = '?'; }
 
     ctx.save();
     ctx.translate(x, y);
+    ctx.globalAlpha = pulse;
+
+    // Outer sparkle particles
+    for (var i = 0; i < 4; i++) {
+      var sparkAngle = (t * 0.003 + i * Math.PI / 2);
+      var sparkR = r * 1.8;
+      var sx = Math.cos(sparkAngle) * sparkR;
+      var sy = Math.sin(sparkAngle) * sparkR;
+      ctx.globalAlpha = pulse * 0.5;
+      ctx.fillStyle = color;
+      ctx.fillRect(sx - 1, sy - 1, 2, 2);
+    }
     ctx.globalAlpha = pulse;
 
     // Glow
@@ -429,24 +518,45 @@
     ctx.save();
     ctx.translate(x, y);
 
-    // Body
-    ctx.fillStyle = flash ? '#ffffff' : '#7e2553';
-    ctx.strokeStyle = flash ? '#ffffff' : '#b13e53';
+    // Body — softer purples
+    ctx.fillStyle = flash ? '#ffffff' : '#9b59b6';
+    ctx.strokeStyle = flash ? '#ffffff' : '#c084fc';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.ellipse(0, 0, r, r * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
+    // Blush marks on cheeks
+    if (!flash) {
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#ff6b9d';
+      ctx.beginPath();
+      ctx.ellipse(-r * 0.35, r * 0.15, r * 0.12, r * 0.07, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(r * 0.05, r * 0.15, r * 0.12, r * 0.07, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
     // Mouth area
     var mouthOpenAmt = whale.mouthOpen ? 0.4 : 0.1;
-    ctx.fillStyle = flash ? '#ffffff' : '#b13e53';
+    ctx.fillStyle = flash ? '#ffffff' : '#c084fc';
     ctx.beginPath();
     ctx.ellipse(-r * 0.7, 0, r * 0.3, r * 0.25 * mouthOpenAmt + r * 0.1, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // Tiny tongue when mouth is open
+    if (whale.mouthOpen && !flash) {
+      ctx.fillStyle = '#ff6b9d';
+      ctx.beginPath();
+      ctx.ellipse(-r * 0.7, r * 0.06, r * 0.08, r * 0.05, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     // Eyes
-    ctx.fillStyle = flash ? '#1a1c2c' : '#f4f4f4';
+    ctx.fillStyle = flash ? '#0d0b1a' : '#f0c4e8';
     ctx.beginPath();
     ctx.arc(-r * 0.2, -r * 0.2, 4, 0, Math.PI * 2);
     ctx.fill();
@@ -455,7 +565,7 @@
     ctx.fill();
 
     // Pupils
-    ctx.fillStyle = '#1a1c2c';
+    ctx.fillStyle = '#0d0b1a';
     ctx.beginPath();
     ctx.arc(-r * 0.22, -r * 0.2, 2, 0, Math.PI * 2);
     ctx.fill();
@@ -464,7 +574,7 @@
     ctx.fill();
 
     // Tail fin
-    ctx.fillStyle = flash ? '#ffffff' : '#5a1a3a';
+    ctx.fillStyle = flash ? '#ffffff' : '#6d28a7';
     ctx.beginPath();
     ctx.moveTo(r * 0.8, 0);
     ctx.lineTo(r * 1.2, -r * 0.3);
@@ -482,11 +592,11 @@
       var barY = y - r * 0.7;
       var hpRatio = Math.max(0, whale.hp / whale.maxHp);
 
-      ctx.fillStyle = '#1a1c2c';
+      ctx.fillStyle = '#0d0b1a';
       ctx.fillRect(barX, barY - 6, barW, 5);
-      ctx.fillStyle = hpRatio > 0.5 ? '#a7f070' : hpRatio > 0.25 ? '#ffcd75' : '#b13e53';
+      ctx.fillStyle = hpRatio > 0.5 ? '#86efac' : hpRatio > 0.25 ? '#fbbf24' : '#f87171';
       ctx.fillRect(barX, barY - 6, barW * hpRatio, 5);
-      ctx.strokeStyle = '#566c86';
+      ctx.strokeStyle = '#7c6a8c';
       ctx.lineWidth = 1;
       ctx.strokeRect(barX, barY - 6, barW, 5);
     }
@@ -501,15 +611,15 @@
     ctx.save();
     ctx.translate(x, y);
 
-    ctx.fillStyle = flash ? '#ffffff' : '#7e2553';
-    ctx.strokeStyle = flash ? '#ffffff' : '#b13e53';
+    ctx.fillStyle = flash ? '#ffffff' : '#9b59b6';
+    ctx.strokeStyle = flash ? '#ffffff' : '#c084fc';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.ellipse(0, 0, r, r * 0.5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = flash ? '#1a1c2c' : '#f4f4f4';
+    ctx.fillStyle = flash ? '#0d0b1a' : '#f0c4e8';
     ctx.beginPath();
     ctx.arc(-r * 0.2, 0, 2, 0, Math.PI * 2);
     ctx.fill();
@@ -518,47 +628,116 @@
   }
 
   /* -------------------------
-     CAPTAIN PORTRAIT DRAW
+     NAGATORO PORTRAIT DRAW
   ------------------------- */
   function drawCaptainPortrait() {
     var pc = captainPortraitCtx;
     var w = 48, h = 48;
     pc.clearRect(0, 0, w, h);
-    pc.fillStyle = '#0a0b14';
+
+    // Background
+    pc.fillStyle = '#1a0d2e';
     pc.fillRect(0, 0, w, h);
 
-    // Head
-    pc.fillStyle = '#ffcd75';
+    // --- Neck ---
+    pc.fillStyle = '#f4c5a0';  // peach skin
+    pc.fillRect(20, 34, 8, 6);
+
+    // --- Head (round) ---
+    pc.fillStyle = '#f4c5a0';
     pc.beginPath();
-    pc.arc(24, 20, 13, 0, Math.PI * 2);
+    pc.arc(24, 24, 13, 0, Math.PI * 2);
     pc.fill();
 
-    // Helmet top
-    pc.fillStyle = '#73eff7';
+    // --- Hair (dark with purple tint) covering top and sides ---
+    pc.fillStyle = '#2d1a4a';
+    // Top of hair
     pc.beginPath();
-    pc.arc(24, 14, 10, Math.PI, 0);
+    pc.arc(24, 20, 13, Math.PI, 0);
+    pc.fill();
+    // Side hair left
+    pc.fillRect(11, 18, 5, 14);
+    // Side hair right
+    pc.fillRect(32, 18, 5, 14);
+    // Bangs — a few strands over forehead
+    pc.fillRect(14, 13, 20, 5);
+    // Hair part highlight
+    pc.fillStyle = '#4a2d6e';
+    pc.fillRect(22, 11, 4, 3);
+
+    // --- Eyes (big anime eyes) ---
+    // White of eye left
+    pc.fillStyle = '#ffffff';
+    pc.beginPath();
+    pc.ellipse(19, 23, 4, 5, 0, 0, Math.PI * 2);
+    pc.fill();
+    // White of eye right
+    pc.beginPath();
+    pc.ellipse(29, 23, 4, 5, 0, 0, Math.PI * 2);
     pc.fill();
 
-    // Visor
-    pc.fillStyle = '#566c86';
-    pc.fillRect(16, 15, 16, 8);
+    // Iris left (dark)
+    pc.fillStyle = '#3d2060';
+    pc.beginPath();
+    pc.ellipse(19, 24, 3, 4, 0, 0, Math.PI * 2);
+    pc.fill();
+    // Iris right
+    pc.beginPath();
+    pc.ellipse(29, 24, 3, 4, 0, 0, Math.PI * 2);
+    pc.fill();
 
-    // Eyes
-    pc.fillStyle = '#a7f070';
-    pc.fillRect(18, 17, 4, 3);
-    pc.fillRect(26, 17, 4, 3);
+    // Pupil left
+    pc.fillStyle = '#0d0b1a';
+    pc.beginPath();
+    pc.arc(19, 24, 1.5, 0, Math.PI * 2);
+    pc.fill();
+    // Pupil right
+    pc.beginPath();
+    pc.arc(29, 24, 1.5, 0, Math.PI * 2);
+    pc.fill();
 
-    // Body
-    pc.fillStyle = '#73eff7';
-    pc.fillRect(17, 33, 14, 10);
+    // Eye shine left
+    pc.fillStyle = '#ffffff';
+    pc.fillRect(20, 21, 2, 2);
+    // Eye shine right
+    pc.fillRect(30, 21, 2, 2);
 
-    // Arms
-    pc.fillRect(11, 33, 5, 7);
-    pc.fillRect(32, 33, 5, 7);
+    // --- Small nose dot ---
+    pc.fillStyle = '#e8a080';
+    pc.fillRect(23, 28, 2, 1);
 
-    // Collar
-    pc.fillStyle = '#38b764';
-    pc.fillRect(16, 31, 16, 4);
+    // --- Cat-like mischievous smile ---
+    pc.strokeStyle = '#c07060';
+    pc.lineWidth = 1;
+    pc.beginPath();
+    pc.moveTo(18, 31);
+    pc.quadraticCurveTo(24, 35, 30, 31);
+    pc.stroke();
+    // Small fang/smirk left
+    pc.strokeStyle = '#ffffff';
+    pc.lineWidth = 0.8;
+    pc.beginPath();
+    pc.moveTo(20, 31);
+    pc.lineTo(19, 33);
+    pc.stroke();
+
+    // --- Blush on cheeks ---
+    pc.globalAlpha = 0.45;
+    pc.fillStyle = '#ff6b9d';
+    pc.beginPath();
+    pc.ellipse(14, 28, 4, 2.5, 0, 0, Math.PI * 2);
+    pc.fill();
+    pc.beginPath();
+    pc.ellipse(34, 28, 4, 2.5, 0, 0, Math.PI * 2);
+    pc.fill();
+    pc.globalAlpha = 1;
+
+    // --- Collar/top ---
+    pc.fillStyle = '#ff6b9d';
+    pc.fillRect(17, 37, 14, 5);
+    // Collar trim
+    pc.fillStyle = '#c084fc';
+    pc.fillRect(17, 37, 14, 2);
   }
 
   /* -------------------------
@@ -566,7 +745,7 @@
   ------------------------- */
   function drawScanlines() {
     ctx.save();
-    ctx.globalAlpha = 0.08;
+    ctx.globalAlpha = 0.03;   // much more subtle — was 0.08
     ctx.fillStyle = '#000000';
     for (var y = 0; y < LOGICAL_H; y += 2) {
       ctx.fillRect(0, y, LOGICAL_W, 1);
@@ -665,7 +844,15 @@
     ctx.save();
     ctx.translate(Math.round(shakeX), Math.round(shakeY));
 
-    ctx.fillStyle = '#000000';
+    // Background — sector 3 gets a subtle purple radial gradient
+    if (state && state.sector === 3) {
+      var bgGrad = ctx.createRadialGradient(LOGICAL_W * 0.5, LOGICAL_H * 0.5, 0, LOGICAL_W * 0.5, LOGICAL_H * 0.5, LOGICAL_W * 0.7);
+      bgGrad.addColorStop(0, '#1a0d2e');
+      bgGrad.addColorStop(1, '#0d0b1a');
+      ctx.fillStyle = bgGrad;
+    } else {
+      ctx.fillStyle = '#0d0b1a';
+    }
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
 
     // Starfield
@@ -762,6 +949,7 @@
       // Handle game phase transitions
       if (state.gamePhase === 'death' && currentScreen !== 'death') {
         triggerShake(400);
+        showStickerPopup('/stickers/oops.webp', 3000);
         setTimeout(function () {
           var deathCap = CAPTAIN_LINES.death[Math.floor(Math.random() * CAPTAIN_LINES.death.length)];
           document.getElementById('death-caption').textContent = state.captainMessage || deathCap;
@@ -769,6 +957,7 @@
           showScreen('death');
         }, 600);
       } else if (state.gamePhase === 'victory' && currentScreen !== 'victory') {
+        showStickerPopup('/stickers/tina_sticker1.webp', 4000);
         var victCap = CAPTAIN_LINES.victory[Math.floor(Math.random() * CAPTAIN_LINES.victory.length)];
         document.getElementById('victory-caption').textContent = state.captainMessage || victCap;
         document.getElementById('victory-score').textContent = state.score || 0;
@@ -799,9 +988,9 @@
       console.log('[CDC] game event:', ev.type, ev.message);
 
       if (ev.type === 'asteroid_destroyed') {
-        spawnExplosion(ev.x || 240, ev.y || 135, '#73eff7', 8);
+        spawnExplosion(ev.x || 240, ev.y || 135, '#b8b0d4', 8);
       } else if (ev.type === 'enemy_destroyed') {
-        spawnExplosion(ev.x || 240, ev.y || 135, '#b13e53', 12);
+        spawnExplosion(ev.x || 240, ev.y || 135, '#f87171', 12);
       } else if (ev.type === 'ship_hit') {
         triggerShake(300);
         if (currentState && currentState.ship) {
@@ -812,6 +1001,8 @@
         }
       } else if (ev.type === 'bullet_impact') {
         spawnSparks(ev.x || 240, ev.y || 135, 4);
+      } else if (ev.type === 'powerup_collected') {
+        showStickerPopup('/stickers/tina_sticker_.webp', 2000);
       }
     });
   }

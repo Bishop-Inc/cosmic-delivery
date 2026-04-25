@@ -26,34 +26,34 @@
         <div class="title-logo">
           <div class="title-main">COSMIC</div>
           <div class="title-main">DELIVERY CO.</div>
-          <div class="title-sub">A 2-Player Co-Op Space Delivery Game</div>
+          <div class="title-sub">a game for two dummies in love~</div>
         </div>
 
         <div class="forms-row">
           <!-- Create Room -->
           <div class="form-box">
-            <div class="form-title">// CREATE ROOM</div>
+            <div class="form-title">// make a room~</div>
             <div class="form-group">
-              <label for="create-name">YOUR CALLSIGN</label>
-              <input type="text" id="create-name" maxlength="16" placeholder="CAPTAIN_01" autocomplete="off">
+              <label for="create-name">your name~</label>
+              <input type="text" id="create-name" maxlength="16" placeholder="nagatoro" autocomplete="off">
             </div>
-            <button id="btn-create" class="btn btn-primary">CREATE ROOM</button>
+            <button id="btn-create" class="btn btn-primary">make room~</button>
           </div>
 
           <div class="form-divider">OR</div>
 
           <!-- Join Room -->
           <div class="form-box">
-            <div class="form-title">// JOIN ROOM</div>
+            <div class="form-title">// join senpai~</div>
             <div class="form-group">
               <label for="join-code">ROOM CODE</label>
               <input type="text" id="join-code" maxlength="6" placeholder="ABC123" autocomplete="off" style="text-transform:uppercase">
             </div>
             <div class="form-group">
-              <label for="join-name">YOUR CALLSIGN</label>
-              <input type="text" id="join-name" maxlength="16" placeholder="GUNNER_02" autocomplete="off">
+              <label for="join-name">your name~</label>
+              <input type="text" id="join-name" maxlength="16" placeholder="senpai" autocomplete="off">
             </div>
-            <button id="btn-join" class="btn btn-primary">JOIN ROOM</button>
+            <button id="btn-join" class="btn btn-primary">join~!</button>
           </div>
         </div>
 
@@ -61,7 +61,7 @@
 
         <!-- Highscores -->
         <div class="highscores-box">
-          <div class="form-title">// TOP SCORES</div>
+          <div class="form-title">// hall of fame~</div>
           <div id="highscores-list" class="highscores-list">
             <div class="hs-loading">LOADING...</div>
           </div>
@@ -73,12 +73,12 @@
     <div id="screen-lobby" class="screen">
       <div class="scanlines"></div>
       <div class="lobby-content">
-        <div class="lobby-title">MISSION BRIEFING</div>
+        <div class="lobby-title">ready, senpai?~</div>
 
         <div class="room-code-display">
           <div class="room-code-label">ROOM CODE</div>
           <div id="lobby-room-code" class="room-code-value">------</div>
-          <div class="room-code-hint">Share this code with your co-pilot!</div>
+          <div class="room-code-hint">send this to your person~!</div>
         </div>
 
         <div class="players-grid">
@@ -94,9 +94,9 @@
           </div>
         </div>
 
-        <div id="lobby-waiting" class="lobby-waiting">Waiting for co-pilot to join...</div>
-        <button id="btn-start" class="btn btn-primary btn-large" style="display:none">LAUNCH MISSION</button>
-        <div id="lobby-guest-msg" class="lobby-waiting" style="display:none">Waiting for host to start...</div>
+        <div id="lobby-waiting" class="lobby-waiting">waiting for your dummy~</div>
+        <button id="btn-start" class="btn btn-primary btn-large" style="display:none">let's gooo~!</button>
+        <div id="lobby-guest-msg" class="lobby-waiting" style="display:none">waiting for them to start~</div>
       </div>
     </div>
 
@@ -104,6 +104,7 @@
     <div id="screen-sector-transition" class="screen">
       <div class="scanlines"></div>
       <div class="transition-content">
+        <img id="trans-sticker" class="sticker-popup" src="/stickers/tina_sticker_.webp">
         <div id="trans-sector-complete" class="trans-big">SECTOR COMPLETE!</div>
         <div id="trans-bonus" class="trans-bonus">+0 BONUS</div>
         <div id="trans-role-swap" class="trans-role">ROLES SWAPPED!</div>
@@ -117,11 +118,12 @@
     <div id="screen-death" class="screen">
       <div class="scanlines"></div>
       <div class="endgame-content">
+        <img id="death-sticker" class="sticker-popup" src="/stickers/oops.webp">
         <div class="end-title red">DELIVERY FAILED</div>
         <div id="death-caption" class="end-caption">"The cargo is lost..."</div>
         <div class="end-score-label">FINAL SCORE</div>
         <div id="death-score" class="end-score">0</div>
-        <button id="btn-restart-death" class="btn btn-primary btn-large">RETRY MISSION</button>
+        <button id="btn-restart-death" class="btn btn-primary btn-large">try again, baka~</button>
       </div>
     </div>
 
@@ -129,12 +131,13 @@
     <div id="screen-victory" class="screen">
       <div class="scanlines"></div>
       <div class="endgame-content">
+        <img id="victory-sticker" class="sticker-popup" src="/stickers/tina_sticker1.webp">
         <div class="end-title gold">DELIVERY COMPLETE!</div>
         <div id="victory-caption" class="end-caption">"Excellent work, crew!"</div>
         <div class="end-score-label">FINAL SCORE</div>
         <div id="victory-score" class="end-score">0</div>
         <div id="victory-deliveries" class="end-deliveries">0 DELIVERIES</div>
-        <button id="btn-restart-victory" class="btn btn-primary btn-large">PLAY AGAIN</button>
+        <button id="btn-restart-victory" class="btn btn-primary btn-large">one more~!</button>
       </div>
     </div>
 
@@ -144,7 +147,7 @@
       <div class="disconnected-content">
         <div class="disc-icon">&#9888;</div>
         <div class="disc-title">SIGNAL LOST</div>
-        <div class="disc-msg">Partner disconnected...<br>waiting for reconnect</div>
+        <div class="disc-msg">they left... come back~!<br>waiting for reconnect</div>
         <div class="disc-spinner">[ ---- ]</div>
       </div>
     </div>
@@ -165,16 +168,19 @@
       <div id="hud-shield" class="hud-shield" style="display:none">SHIELD ACTIVE</div>
     </div>
 
-    <!-- CAPTAIN DIALOGUE -->
+    <!-- NAGATORO DIALOGUE -->
     <div id="captain-dialogue" style="display:none">
       <div class="captain-portrait" id="captain-portrait-canvas-wrapper">
         <canvas id="captain-portrait" width="48" height="48"></canvas>
       </div>
       <div class="captain-text-area">
-        <div class="captain-name">CAPTAIN KORB</div>
+        <div class="captain-name">nagatoro~</div>
         <div id="captain-text" class="captain-text"></div>
       </div>
     </div>
+
+    <!-- Sticker float popup for gameplay events -->
+    <div id="sticker-float" class="sticker-float" style="display:none"><img id="sticker-float-img" src=""></div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

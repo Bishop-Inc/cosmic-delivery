@@ -5,59 +5,59 @@ const { getSectorConfig, GAME_W, GAME_H } = require('./sectors');
 const { addHighscore } = require('./highscores');
 
 // ---------------------------------------------------------------------------
-// Captain dialogue
+// Nagatoro dialogue
 // ---------------------------------------------------------------------------
-const CAPTAIN_LINES = {
+const NAGATORO_LINES = {
   sector1: [
-    "Alright {pilot} and {gunner}, welcome to The Belt. Try not to get us killed in the first 30 seconds. I'm watching.",
-    "Sector 1. Rocks. Lots of them. {pilot}, steer. {gunner}, shoot. Revolutionary strategy, I know.",
-    "Good news: it's just asteroids. Bad news: {pilot} is driving. {gunner}, say your prayers.",
-    "{pilot}, those controls are for MOVING the ship, not decorating it. {gunner}, you're doing great. Relatively.",
-    "The Belt, they call it. I call it {pilot}'s personal obstacle course. {gunner}, keep shooting or I'm docking your pay.",
-    "Listen up crew. {pilot} flies, {gunner} blasts. Mess this up and I'm replacing you both with a Roomba."
+    "Oaoaooa~ Senpai, try not to crash us into rocks on the FIRST sector! {gunner}, keep an eye on this one~",
+    "Ehehe~ sector one and {pilot} already looks nervous! {gunner}, you're the only competent one here, probably~",
+    "{pilot}! Those are ASTEROIDS, baka~ They don't move out of your way! {gunner}, cover for this disaster please~",
+    "The Belt~ Lots of rocks, zero excuses! {pilot} steers, {gunner} shoots. Even Senpai can manage that... maybe~",
+    "Hmph! {pilot} acts so confident but watch them panic the second a rock gets close~ {gunner}, stay sharp okay?",
+    "You know what's cute? Watching {pilot} pretend they know what they're doing~ {gunner}... I actually believe in you two."
   ],
   sector2: [
-    "Oh wonderful — PIRATES. {pilot}, they're faster than asteroids, so... probably fly BETTER? {gunner}, don't miss.",
-    "Sector 2! {gunner}, there are actual ships shooting back now. How does that make you feel? Good? Terrified? Same thing.",
-    "{pilot}, the pirates are real and angry and — oh look, {pilot} is already panicking. Classic.",
-    "Pirates spotted. {gunner}, they drop loot when you destroy them. Try to actually destroy them this time.",
-    "Pirate Skirmish! {pilot} thinks they know evasive maneuvers. Let's test that theory, shall we?",
-    "Sector 2, crew. {gunner}, shoot the ships. {pilot}, don't fly INTO the ships. Write it down if you need to."
+    "Oaoaooa~ PIRATES?! {pilot}, they shoot BACK, just so you know! Don't embarrass me in front of the enemy~",
+    "Sector two and now we have REAL opponents~ {gunner}, show them what we've got! {pilot}, try not to fly INTO them~",
+    "Ehehe~ {pilot}'s face right now~ It's okay Senpai, I'll protect you! ...just kidding, {gunner} will~",
+    "Pirates spotted~ They drop loot when {gunner} blows them up. Emphasis on WHEN, not if. We believe in {gunner}~",
+    "Hmph! {pilot} thinks evasive maneuvers are just wiggling around! {gunner}, please compensate for this~",
+    "{pilot}, {gunner}... pirates are nothing. We've come so far together already. Don't mess it up now, baka~"
   ],
   sector3: [
-    "Is that... a WHALE? IN SPACE? {pilot}, aim for the mouth when it opens. {gunner}, SHOOT THE MOUTH. Do NOT shoot me.",
-    "THE WHALE. This is what we signed up for. {pilot}, keep us alive. {gunner}, you're literally our only hope. No pressure.",
-    "It's beautiful. It's enormous. It will kill us all. {pilot}, {gunner}... it's been an honor. Mostly.",
-    "Phase 3, crew. The Whale. Her name is Margaret and she is FURIOUS. Aim for the open mouth. GO.",
-    "{pilot}! DODGE! {gunner}! SHOOT! BOTH OF YOU! THE MOUTH! WHEN IT'S OPEN! WHY IS THIS HARD?",
-    "Sector 3. The Whale. She spawns babies. {gunner}, kill the babies. {pilot}, try not to hit the babies. Or do. I don't care anymore."
+    "Is that... a space WHALE?! Oaoaooa~ {pilot}, aim for the mouth when it opens! {gunner}, SHOOT THE MOUTH~",
+    "THE WHALE! {pilot}, keep us alive! {gunner}, you're literally our only hope right now! No pressure, ehehe~",
+    "It's huge... it's beautiful... it will absolutely end us~ {pilot}, {gunner}... this is what we trained for!",
+    "Hmph! Her name is Margaret and she is FURIOUS~ Shoot the open mouth! GO! Don't just stare at it, baka~",
+    "{pilot}! DODGE! {gunner}! SHOOT! THE MOUTH! WHEN IT'S OPEN! Oaoaooa~ WHY IS THIS SO HARD~",
+    "She spawns babies too~ {gunner}, handle the babies. {pilot}, try not to crash into the babies. Or the mom. Or anything~"
   ],
   death: [
-    "We're dead. DEAD. {pilot} flew us into that. {gunner} was almost helpful. Almost.",
-    "Ship destroyed. {pilot}, a word: that asteroid was VISIBLE. From SPACE. Which is where we ARE.",
-    "Annnd we're dead. Great job {pilot}. Stellar work {gunner}. I'm going to take a long nap in the void.",
-    "You know, most captains go down with the ship. I plan to haunt you both specifically for this.",
-    "Dead again. I've been killed by better pilots. Also by worse ones. You two are uniquely mediocre.",
-    "Critical hull failure. {pilot} sends their regards. {gunner} is already blaming {pilot}. Accurate."
+    "Senpai... you DIED?! Ahaha, that was so pathetic it's almost cute~ ...almost.",
+    "Oaoaooa~ {pilot} flew us into THAT?! {gunner} was actually doing fine! Baka baka baka~",
+    "Dead again~ {pilot}, that asteroid was literally just SITTING THERE. How... how did you hit it~",
+    "Ehehe... I'm not even mad, I'm just... disappointed~ {pilot} and {gunner}, you were SO close too.",
+    "Hmph! Most people get better with practice. {pilot} is a special case~ ...come on, let's try again.",
+    "...hey. {pilot}. {gunner}. We'll get it next time, okay? I know we will. Don't give up on me~"
   ],
   victory: [
-    "WE DID IT! {pilot} FLEW! {gunner} SHOT! The whale is GONE! I'm promoting you both to... still unpaid interns.",
-    "VICTORY! The delivery is complete! {pilot} and {gunner}, I take back 40% of the terrible things I said. Not all of them.",
-    "WE SURVIVED THE WHALE. {pilot}, that was flying. {gunner}, that was shooting. Together: barely competent. I love you both.",
-    "Delivery complete! {pilot} and {gunner} have proven that two semi-skilled humans can beat a space whale. Barely.",
-    "COSMIC DELIVERY ACHIEVED! {pilot}, {gunner} — this is your moment. Savor it. We're doing it again immediately.",
-    "We won. WE WON! The whale is dead, the cargo is delivered, and {pilot} only crashed us TWICE. New record."
+    "W-we actually did it?! I mean... of course we did! {pilot} and {gunner} aren't COMPLETELY useless~ ...that was really fun though.",
+    "VICTORY! Oaoaooa~ The whale is GONE! {pilot}, that was almost impressive! {gunner}, you were amazing~",
+    "WE SURVIVED THE WHALE! {pilot}, that was flying! {gunner}, that was shooting! Together... you're actually kind of great~",
+    "Delivery complete! Ehehe~ {pilot} and {gunner} beat a space whale! I knew you could do it. Don't tell anyone I said that~",
+    "Hmph! We won! WE WON! {pilot} only crashed us twice, {gunner} carried, and I... supervised perfectly~ as always.",
+    "{pilot}... {gunner}... I'm really glad we did this together. Genuinely. Don't make it weird~ ehehe."
   ],
   powerupWasted: [
-    "A shield! And {pilot} flew us into a rock anyway. Phenomenal.",
-    "{gunner} is holding repair... and not repairing. Fascinating survival strategy.",
-    "Spread shot! {gunner} managed to hit nothing with FIVE BULLETS. That takes talent.",
-    "The powerup is just floating there. Are you TWO allergic to winning?"
+    "You had ONE job, Senpai! ONE! Ehehe, your face right now~",
+    "{gunner} is holding a powerup and just... not using it~ Baka, what are you WAITING for~",
+    "Spread shot! {gunner} aimed at nothing with FIVE BULLETS! That takes a special kind of talent~",
+    "The powerup is just floating there~ Are you two allergic to winning or something? Oaoaooa~"
   ]
 };
 
 function getLine(category, pilot, gunner) {
-  const lines = CAPTAIN_LINES[category];
+  const lines = NAGATORO_LINES[category];
   if (!lines) return '';
   const line = lines[Math.floor(Math.random() * lines.length)];
   return line

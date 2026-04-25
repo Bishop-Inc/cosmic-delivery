@@ -18,6 +18,9 @@ const io = new Server(server, {
 // Serve static files from public/
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve stickers
+app.use('/stickers', express.static(path.join(__dirname, 'stickers')));
+
 // REST: highscores
 app.get('/api/highscores', (req, res) => {
   res.json(getHighscores());
