@@ -78,6 +78,7 @@
   var canvasWrapper = document.getElementById('canvas-wrapper');
 
   var screens = {
+    studioIntro: document.getElementById('screen-studio-intro'),
     title: document.getElementById('screen-title'),
     lobby: document.getElementById('screen-lobby'),
     sectorTransition: document.getElementById('screen-sector-transition'),
@@ -1480,6 +1481,33 @@
   }
 
   /* -------------------------
+     STUDIO INTRO (first-load only)
+  ------------------------- */
+  function maybeShowStudioIntro() {
+    var seen = false;
+    try { seen = !!localStorage.getItem('ti-games-seen'); } catch (e) { seen = false; }
+    if (seen) {
+      showScreen('title');
+      return;
+    }
+    showScreen('studioIntro');
+    var dismissed = false;
+    function finish() {
+      if (dismissed) return;
+      dismissed = true;
+      try { localStorage.setItem('ti-games-seen', '1'); } catch (e) { /* ignore */ }
+      showScreen('title');
+    }
+    // Auto-finish after the CSS animation completes (~3.4s)
+    setTimeout(finish, 3500);
+    // Click anywhere to skip
+    var introEl = screens.studioIntro;
+    if (introEl) {
+      introEl.addEventListener('click', finish, { once: true });
+    }
+  }
+
+  /* -------------------------
      INIT
   ------------------------- */
   function init() {
@@ -1489,7 +1517,7 @@
     setupButtons();
     setupAudio(); // fire and forget
     loadHighscores();
-    showScreen('title');
+    maybeShowStudioIntro();
   }
 
   init();
