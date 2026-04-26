@@ -9,85 +9,85 @@ const { addHighscore } = require('./highscores');
 // ---------------------------------------------------------------------------
 const NAGATORO_LINES = {
   sector1: [
-    "Oaoaooa~ Senpai, try not to crash us into rocks on the FIRST sector! {gunner}, keep an eye on this one~",
-    "Ehehe~ sector one and {pilot} already looks nervous! {gunner}, you're the only competent one here, probably~",
-    "{pilot}! Those are ASTEROIDS, baka~ They don't move out of your way! {gunner}, cover for this disaster please~",
-    "The Belt~ Lots of rocks, zero excuses! {pilot} steers, {gunner} shoots. Even Senpai can manage that... maybe~",
-    "Hmph! {pilot} acts so confident but watch them panic the second a rock gets close~ {gunner}, stay sharp okay?",
-    "You know what's cute? Watching {pilot} pretend they know what they're doing~ {gunner}... I actually believe in you two."
+    "the belt~ rocks, zero excuses lol. {pilot} steers, {gunner} shoots. tipo even senpai can do that ?",
+    "oki oki sector 1~ {pilot} alrd nervous. {gunner} pls cover for this disaster~",
+    "oaoaooa {pilot} those r ASTEROIDS, baka~ they don't move. {gunner} stay sharp",
+    "ehehe~ {pilot} acts confident but watch them panic in 3 seconds lol",
+    "aga aga {gunner}... i actually believe in u two. dont make it weird~",
+    "lil belt, lil rocks~ tipo just don't crash {pilot}~"
   ],
   sector2: [
-    "Oaoaooa~ PIRATES?! {pilot}, they shoot BACK, just so you know! Don't embarrass me in front of the enemy~",
-    "Sector two and now we have REAL opponents~ {gunner}, show them what we've got! {pilot}, try not to fly INTO them~",
-    "Ehehe~ {pilot}'s face right now~ It's okay Senpai, I'll protect you! ...just kidding, {gunner} will~",
-    "Pirates spotted~ They drop loot when {gunner} blows them up. Emphasis on WHEN, not if. We believe in {gunner}~",
-    "Hmph! {pilot} thinks evasive maneuvers are just wiggling around! {gunner}, please compensate for this~",
-    "{pilot}, {gunner}... pirates are nothing. We've come so far together already. Don't mess it up now, baka~"
+    "oaoaooa PIRATES~ {pilot} they shoot BACK okay ? don't embarrass me",
+    "sector 2~ real opponents tdy. {gunner} show them. {pilot} dont fly INTO them",
+    "ehehe~ {pilot} face right now. tipo {gunner} please carry~",
+    "pirates drop loot when {gunner} blows them up. WHEN not if. aga ?",
+    "boje moi {pilot} thinks dodging is wiggling~ {gunner} compensate pls",
+    "{pilot} {gunner}~ pirates r nothing. we came so far tgthr. dont mess it up"
   ],
   sector3: [
-    "Is that... a space WHALE?! Oaoaooa~ {pilot}, aim for the mouth when it opens! {gunner}, SHOOT THE MOUTH~",
-    "THE WHALE! {pilot}, keep us alive! {gunner}, you're literally our only hope right now! No pressure, ehehe~",
-    "It's huge... it's beautiful... it will absolutely end us~ {pilot}, {gunner}... this is what we trained for!",
-    "Hmph! Her name is Margaret and she is FURIOUS~ Shoot the open mouth! GO! Don't just stare at it, baka~",
-    "{pilot}! DODGE! {gunner}! SHOOT! THE MOUTH! WHEN IT'S OPEN! Oaoaooa~ WHY IS THIS SO HARD~",
-    "She spawns babies too~ {gunner}, handle the babies. {pilot}, try not to crash into the babies. Or the mom. Or anything~"
+    "is that... a space WHALE ? oaoaooa~ {gunner} SHOOT THE MOUTH",
+    "THE WHALE. {pilot} keep us alive. {gunner} ur our only hope, no pressure ehehe~",
+    "she's huge. she's beautiful. she will end us~ {pilot} {gunner} this is it",
+    "her name is margaret and she is FURIOUS~ shoot the open mouth GO. dont stare baka",
+    "{pilot} DODGE. {gunner} SHOOT. THE MOUTH. WHEN OPEN. blin why is this hard~",
+    "she spawns babies too~ {gunner} babies. {pilot} dont crash into babies. or mom. or anything"
   ],
   death: [
-    "Senpai... you DIED?! Ahaha, that was so pathetic it's almost cute~ ...almost.",
-    "Oaoaooa~ {pilot} flew us into THAT?! {gunner} was actually doing fine! Baka baka baka~",
-    "Dead again~ {pilot}, that asteroid was literally just SITTING THERE. How... how did you hit it~",
-    "Ehehe... I'm not even mad, I'm just... disappointed~ {pilot} and {gunner}, you were SO close too.",
-    "Hmph! Most people get better with practice. {pilot} is a special case~ ...come on, let's try again.",
-    "...hey. {pilot}. {gunner}. We'll get it next time, okay? I know we will. Don't give up on me~"
+    "senpai... u DIED ? ahaha pathetic, almost cute~ ...almost",
+    "oaoaooa~ {pilot} flew us into THAT. {gunner} was alrd doing fine. baka baka baka~",
+    "dead again~ {pilot} that asteroid was just SITTING there. kak tak~",
+    "ehehe... ne ochenskii. {pilot} {gunner} u were SO close tbh~",
+    "hmph. most ppl get better with practice. {pilot} is special~ ...kel, eshe raz",
+    "...{pilot}. {gunner}. eshe raz ? we'll get it. ya znayu. dont give up on me~"
   ],
   victory: [
-    "W-we actually did it?! I mean... of course we did! {pilot} and {gunner} aren't COMPLETELY useless~ ...that was really fun though.",
-    "VICTORY! Oaoaooa~ The whale is GONE! {pilot}, that was almost impressive! {gunner}, you were amazing~",
-    "WE SURVIVED THE WHALE! {pilot}, that was flying! {gunner}, that was shooting! Together... you're actually kind of great~",
-    "Delivery complete! Ehehe~ {pilot} and {gunner} beat a space whale! I knew you could do it. Don't tell anyone I said that~",
-    "Hmph! We won! WE WON! {pilot} only crashed us twice, {gunner} carried, and I... supervised perfectly~ as always.",
-    "{pilot}... {gunner}... I'm really glad we did this together. Genuinely. Don't make it weird~ ehehe."
+    "we actually did it ? i mean of course we did~ {pilot} {gunner} not COMPLETELY useless lol",
+    "VICTORY oaoaooa~ whale GONE. {pilot} almost impressive. {gunner} ty molodets~",
+    "WE SURVIVED. {pilot} that was flying. {gunner} that was shooting. tgthr u r kinda great~",
+    "delivery complete~ ehehe {pilot} {gunner} beat a whale. ya znala u could~ dont tell anyone",
+    "WE WON. {pilot} only crashed twice~ {gunner} carried. i supervised perfectly~",
+    "{pilot}... {gunner}... rakhmat. genuinely. dont make it weird~ ehehe"
   ],
   powerupWasted: [
-    "You had ONE job, Senpai! ONE! Ehehe, your face right now~",
-    "{gunner} is holding a powerup and just... not using it~ Baka, what are you WAITING for~",
-    "Spread shot! {gunner} aimed at nothing with FIVE BULLETS! That takes a special kind of talent~",
-    "The powerup is just floating there~ Are you two allergic to winning or something? Oaoaooa~"
+    "ONE job senpai. ONE. ehehe ur face rn~",
+    "{gunner} holding a powerup and just... not using it. baka, what r u WAITING for~",
+    "spread shot~ {gunner} aimed at NOTHING with 5 bullets. tipo a special talent",
+    "powerup just floating there~ allergic to winning ? oaoaooa~"
   ],
   eject: [
-    "{pilot}!! You FLEW out the WINDOW! Oaoaooa~ {gunner}, GO GET THEM~",
-    "Senpaaaai you're literally floating away~ {gunner}, this is your moment, save your dummy~",
-    "Ehehe~ {pilot} just got YEETED by an asteroid~ {gunner}, fly! FLY~",
-    "Hmph! I am NOT writing the apology letter to {pilot}'s mom. {gunner}, hurry~"
+    "{pilot}!! oaoaooa u FLEW out the WINDOW~ {gunner} go go go",
+    "senpaaaai literally floating away~ {gunner} ur moment, save ur dummy",
+    "ehehe~ {pilot} got YEETED by a rock. {gunner} blin FLY",
+    "hmph. NOT writing the apology letter to {pilot}'s mom. {gunner} hurry~"
   ],
   drifting: [
-    "{pilot} is doing little tumbles in space~ It's actually kind of cute, ehehe~",
-    "Oaoaooa~ Senpai, just hold still! {gunner} is COMING~",
-    "{pilot} is making 'help me' faces through the helmet visor~ adorable~",
-    "Hmph! {pilot} flailing in zero-g is the funniest thing I've ever seen~"
+    "{pilot} doing lil tumbles in space~ tipo kinda cute ehehe",
+    "oaoaooa senpai just hold still~ {gunner} kel kel kel",
+    "{pilot} making 'help me' face thru the visor~ adorable lol",
+    "{pilot} flailing in zero-g~ funniest thing tbh"
   ],
   distress: [
-    "{gunner}!! HURRY!! {pilot} is drifting toward the void~ I am NOT joking now~",
-    "S-stop being cool and SAVE THEM, {gunner}~ Oaoaooa~",
-    "{pilot} is getting really small on the screen~ THAT'S BAD, GO GO GO~",
-    "Oaoaooa~ I can't watch~ {gunner}, please please please~"
+    "boje moi {gunner} HURRY~ {pilot} drifting blin. ya tebe govoryu HURRY",
+    "{gunner} STOP being cool and SAVE THEM~ oaoaooa",
+    "{pilot} getting really small on screen~ THAT'S BAD. go go go",
+    "oaoaooa i can't watch~ {gunner} please please please"
   ],
   rescue: [
-    "Senpai's back~! Don't... don't do that again, baka~",
-    "Oaoaooa~ {gunner} you ABSOLUTE star~ {pilot}, say thank you, properly~",
-    "Crew recovered! Ehehe~ {pilot} owes {gunner} dinner now. I'm taking notes~",
-    "Hmph! I knew you'd save them. ...okay maybe I was a LITTLE worried~"
+    "senpai's back~ dont... dont do that again, baka",
+    "oaoaooa~ {gunner} ty molodets~ {pilot} say ty ty, properly",
+    "crew recovered ehehe~ {pilot} owes {gunner} dinner. taking notes~",
+    "hmph i knew u'd save them~ ...oki mb i was a LIL worried"
   ],
   lostCrew: [
-    "Senpai... Senpai? ...{pilot}? ...oh no. Oh no no no~",
-    "{pilot} is GONE~ Just... gone~ {gunner}... I'm so sorry~",
-    "We lost crew~ The void took {pilot}~ ehehe... that's not funny is it~",
-    "{gunner}... we tried. We really did. ...let's try again. Together."
+    "...{pilot} ? ...gde ty ? ...vse. blin. ne znayu what to say~",
+    "{pilot} is GONE~ just... gone. {gunner}... mne tak jal'~",
+    "we lost crew~ the void took {pilot}. ehehe... not funny is it",
+    "{gunner}... we tried. we really did~ ...eshe raz. tgthr"
   ],
   boardingClose: [
-    "Just a little closer~! Don't BUMP them, baka~",
-    "Almost there~ Steady... steady... oaoaooa~",
-    "Slow down {gunner}! You're gonna squish {pilot}~ ehehe~"
+    "lil closer~ dont BUMP them, baka",
+    "almost there~ steady... steady... oaoaooa",
+    "slow down {gunner}~ gonna squish {pilot} ehehe~"
   ]
 };
 

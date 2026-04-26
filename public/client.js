@@ -21,14 +21,14 @@
 
   var CAPTAIN_LINES = {
     death: [
-      '"The cargo is lost in the void..."',
-      '"No... not like this..."',
-      '"Signal lost. Crew unaccounted for."'
+      '"the cargo... lost in the void~"',
+      '"vse... ne znayu what happened..."',
+      '"signal lost. crew unaccounted for~"'
     ],
     victory: [
-      '"Delivery confirmed! Outstanding work, crew!"',
-      '"Package delivered! The client is pleased."',
-      '"Flawless execution. Drinks are on me."'
+      '"delivery confirmed~ ty ty crew"',
+      '"package delivered. the client is pleased~"',
+      '"flawless execution. drinks on me, oki ?"'
     ]
   };
 
