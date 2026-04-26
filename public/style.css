@@ -153,11 +153,11 @@ html, body {
   padding: 8px;
 }
 .form-divider::before {
-  content: '♥ ';
+  content: '· ';
   color: var(--accent);
 }
 .form-divider::after {
-  content: ' ♥';
+  content: ' ·';
   color: var(--accent);
 }
 
@@ -474,7 +474,7 @@ input[type="text"]::placeholder {
   letter-spacing: 2px;
 }
 .slot-role::before {
-  content: '♥ ';
+  content: '· ';
   color: var(--accent);
 }
 .slot-name {
