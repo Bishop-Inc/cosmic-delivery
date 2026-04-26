@@ -342,6 +342,82 @@
     ctx.restore();
   }
 
+  function drawEVAPlayer(eva, t) {
+    var x = Math.round(eva.x);
+    var y = Math.round(eva.y);
+
+    // Tiny jetpack puff trail when moving
+    var spd = Math.hypot(eva.vx || 0, eva.vy || 0);
+    if (spd > 30) {
+      ctx.save();
+      var nvx = eva.vx / spd;
+      var nvy = eva.vy / spd;
+      for (var i = 0; i < 3; i++) {
+        ctx.globalAlpha = 0.5 - i * 0.15;
+        ctx.fillStyle = i === 0 ? '#fff' : '#ff6b9d';
+        ctx.fillRect(x - nvx * (3 + i * 2) - 1, y - nvy * (3 + i * 2) - 1, 2, 2);
+      }
+      ctx.restore();
+    }
+
+    // Body — chibi astronaut, tumbling
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(eva.rotation || 0);
+    // Suit (torso)
+    ctx.fillStyle = '#ff6b9d';
+    ctx.fillRect(-2, 1, 4, 3);
+    // Limbs
+    ctx.fillRect(-4, 0, 2, 2);
+    ctx.fillRect(2, 0, 2, 2);
+    ctx.fillRect(-2, 4, 1, 2);
+    ctx.fillRect(1, 4, 1, 2);
+    // Helmet
+    ctx.fillStyle = '#f0c4e8';
+    ctx.beginPath();
+    ctx.arc(0, -1, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    // Visor
+    ctx.fillStyle = '#1a0d2e';
+    ctx.fillRect(-1.5, -1.5, 3, 1);
+    ctx.restore();
+
+    // Boarding progress arc (green) when in pickup zone
+    if (eva.boardingTimer > 0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = '#86efac';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      var pct = Math.min(1, eva.boardingTimer / 0.4);
+      ctx.arc(0, 0, 7, -Math.PI / 2, -Math.PI / 2 + pct * Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Drift warning ring (red, pulsing) near the edges
+    var margin = 35;
+    if (eva.x < margin || eva.x > LOGICAL_W - margin || eva.y < margin || eva.y > LOGICAL_H - margin) {
+      ctx.save();
+      ctx.strokeStyle = '#f87171';
+      ctx.globalAlpha = 0.4 + 0.4 * Math.sin((t || 0) * 0.012);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Role label
+    ctx.save();
+    ctx.fillStyle = '#fbbf24';
+    ctx.globalAlpha = 0.8;
+    ctx.font = '5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText((eva.role || '').toUpperCase(), x, y - 7);
+    ctx.restore();
+  }
+
   function drawAsteroid(ast) {
     var x = Math.round(ast.x);
     var y = Math.round(ast.y);
@@ -782,6 +858,20 @@
     } else {
       shieldEl.style.display = 'none';
     }
+
+    var evaEl = document.getElementById('hud-eva');
+    if (evaEl) {
+      var anyEVA = state.pilotEVA || state.gunnerEVA;
+      if (anyEVA) {
+        var roles = [];
+        if (state.pilotEVA)  roles.push('PILOT');
+        if (state.gunnerEVA) roles.push('GUNNER');
+        evaEl.textContent = roles.join(' + ') + ' ADRIFT — RESCUE';
+        evaEl.style.display = 'block';
+      } else {
+        evaEl.style.display = 'none';
+      }
+    }
   }
 
   /* -------------------------
@@ -898,6 +988,10 @@
       drawShip(state.ship.x, state.ship.y, state.ship.hasShield, flashWhite);
     }
 
+    // EVA crewmates (drawn after ship so they're on top when overlapping at re-board)
+    if (state.pilotEVA)  drawEVAPlayer(state.pilotEVA, ts);
+    if (state.gunnerEVA) drawEVAPlayer(state.gunnerEVA, ts);
+
     // Particles
     drawParticles();
 
@@ -1003,6 +1097,17 @@
         spawnSparks(ev.x || 240, ev.y || 135, 4);
       } else if (ev.type === 'powerup_collected') {
         showStickerPopup('/stickers/tina_sticker_.webp', 2000);
+      } else if (ev.type === 'eject') {
+        triggerShake(500);
+        if (currentState && currentState.ship) {
+          spawnSparks(currentState.ship.x, currentState.ship.y, 8);
+        }
+      } else if (ev.type === 'rescue') {
+        if (currentState && currentState.ship) {
+          spawnExplosion(currentState.ship.x, currentState.ship.y, '#86efac', 14);
+        }
+      } else if (ev.type === 'eva_lost') {
+        triggerShake(300);
       }
     });
   }
@@ -1087,118 +1192,124 @@
 
   /* -------------------------
      INPUT HANDLING
+     Both clients always send the full payload (WASD + mouse + click + E + space).
+     Server picks which fields to use each tick based on EVA state. This lets the
+     remaining player take over both controls when their crewmate is in EVA.
   ------------------------- */
-  var pilotKeys = { up: false, down: false, left: false, right: false };
+  var myKeys = { up: false, down: false, left: false, right: false };
+  var myAim  = { aimX: 0.5, aimY: 0.5 };
+  var myEjectKey = false;
+
+  function emitInput() {
+    if (!socket || !myRole) return;
+    var payload = {
+      up: myKeys.up, down: myKeys.down, left: myKeys.left, right: myKeys.right,
+      aimX: myAim.aimX, aimY: myAim.aimY,
+      shooting: shooting,
+      holdingRepair: holdingRepair,
+      ejectKey: myEjectKey
+    };
+    socket.emit(myRole === 'pilot' ? 'input:pilot' : 'input:gunner', payload);
+  }
 
   function setupInput() {
-    // Pilot keys
+    // WASD — both clients capture; server decides whether it drives the ship or the EVA jetpack
     window.addEventListener('keydown', function (e) {
       if (currentScreen !== 'playing') return;
-      if (myRole !== 'pilot') return;
-      var before = JSON.stringify(pilotKeys);
-      if (e.key === 'w' || e.key === 'ArrowUp')    pilotKeys.up    = true;
-      if (e.key === 's' || e.key === 'ArrowDown')  pilotKeys.down  = true;
-      if (e.key === 'a' || e.key === 'ArrowLeft')  pilotKeys.left  = true;
-      if (e.key === 'd' || e.key === 'ArrowRight') pilotKeys.right = true;
-      if (JSON.stringify(pilotKeys) !== before) socket.emit('input:pilot', pilotKeys);
-      e.preventDefault && e.preventDefault();
-    });
-
-    window.addEventListener('keyup', function (e) {
-      if (currentScreen !== 'playing') return;
-      if (myRole !== 'pilot') return;
-      var before = JSON.stringify(pilotKeys);
-      if (e.key === 'w' || e.key === 'ArrowUp')    pilotKeys.up    = false;
-      if (e.key === 's' || e.key === 'ArrowDown')  pilotKeys.down  = false;
-      if (e.key === 'a' || e.key === 'ArrowLeft')  pilotKeys.left  = false;
-      if (e.key === 'd' || e.key === 'ArrowRight') pilotKeys.right = false;
-      if (JSON.stringify(pilotKeys) !== before) socket.emit('input:pilot', pilotKeys);
-    });
-
-    // Gunner spacebar for repair
-    window.addEventListener('keydown', function (e) {
-      if (currentScreen !== 'playing') return;
-      if (myRole !== 'gunner') return;
+      var changed = false;
+      if (e.key === 'w' || e.key === 'ArrowUp')    { if (!myKeys.up)    { myKeys.up    = true; changed = true; } }
+      if (e.key === 's' || e.key === 'ArrowDown')  { if (!myKeys.down)  { myKeys.down  = true; changed = true; } }
+      if (e.key === 'a' || e.key === 'ArrowLeft')  { if (!myKeys.left)  { myKeys.left  = true; changed = true; } }
+      if (e.key === 'd' || e.key === 'ArrowRight') { if (!myKeys.right) { myKeys.right = true; changed = true; } }
       if (e.code === 'Space') {
-        holdingRepair = true;
+        if (!holdingRepair) { holdingRepair = true; changed = true; }
+        e.preventDefault && e.preventDefault();
+      }
+      if (e.key === 'e' || e.key === 'E') {
+        if (!myEjectKey) { myEjectKey = true; changed = true; }
+        e.preventDefault && e.preventDefault();
+      }
+      if (changed) emitInput();
+      if (e.key === 'w' || e.key === 's' || e.key === 'a' || e.key === 'd' ||
+          e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault && e.preventDefault();
       }
     });
+
     window.addEventListener('keyup', function (e) {
       if (currentScreen !== 'playing') return;
-      if (myRole !== 'gunner') return;
-      if (e.code === 'Space') holdingRepair = false;
+      var changed = false;
+      if (e.key === 'w' || e.key === 'ArrowUp')    { if (myKeys.up)    { myKeys.up    = false; changed = true; } }
+      if (e.key === 's' || e.key === 'ArrowDown')  { if (myKeys.down)  { myKeys.down  = false; changed = true; } }
+      if (e.key === 'a' || e.key === 'ArrowLeft')  { if (myKeys.left)  { myKeys.left  = false; changed = true; } }
+      if (e.key === 'd' || e.key === 'ArrowRight') { if (myKeys.right) { myKeys.right = false; changed = true; } }
+      if (e.code === 'Space')      { if (holdingRepair) { holdingRepair = false; changed = true; } }
+      if (e.key === 'e' || e.key === 'E') { if (myEjectKey) { myEjectKey = false; changed = true; } }
+      if (changed) emitInput();
     });
 
-    // Gunner mouse
-    var lastGunnerEmit = 0;
+    // Mouse — both clients capture; server uses for ship aim/shoot when whoever's on board
+    var lastMouseEmit = 0;
     canvas.addEventListener('mousemove', function (e) {
       if (currentScreen !== 'playing') return;
-      if (myRole !== 'gunner') return;
       var now = Date.now();
-      if (now - lastGunnerEmit < 33) return; // 30Hz throttle
-      lastGunnerEmit = now;
+      if (now - lastMouseEmit < 33) return; // 30Hz throttle
+      lastMouseEmit = now;
       var rect = canvas.getBoundingClientRect();
-      var aimX = (e.clientX - rect.left) / rect.width;
-      var aimY = (e.clientY - rect.top) / rect.height;
-      socket.emit('input:gunner', { aimX: aimX, aimY: aimY, shooting: shooting, holdingRepair: holdingRepair });
+      myAim.aimX = (e.clientX - rect.left) / rect.width;
+      myAim.aimY = (e.clientY - rect.top) / rect.height;
+      emitInput();
     });
 
     canvas.addEventListener('mousedown', function (e) {
       if (currentScreen !== 'playing') return;
-      if (myRole !== 'gunner') return;
       if (e.button === 0) {
         shooting = true;
         var rect = canvas.getBoundingClientRect();
-        var aimX = (e.clientX - rect.left) / rect.width;
-        var aimY = (e.clientY - rect.top) / rect.height;
-        socket.emit('input:gunner', { aimX: aimX, aimY: aimY, shooting: true, holdingRepair: holdingRepair });
+        myAim.aimX = (e.clientX - rect.left) / rect.width;
+        myAim.aimY = (e.clientY - rect.top) / rect.height;
+        emitInput();
       }
     });
 
     canvas.addEventListener('mouseup', function (e) {
-      if (myRole !== 'gunner') return;
       if (e.button === 0) {
         shooting = false;
         var rect = canvas.getBoundingClientRect();
-        var aimX = (e.clientX - rect.left) / rect.width;
-        var aimY = (e.clientY - rect.top) / rect.height;
-        socket.emit('input:gunner', { aimX: aimX, aimY: aimY, shooting: false, holdingRepair: holdingRepair });
+        myAim.aimX = (e.clientX - rect.left) / rect.width;
+        myAim.aimY = (e.clientY - rect.top) / rect.height;
+        emitInput();
       }
     });
 
-    // Touch aim for gunner (mobile fallback)
+    // Touch fallback (mobile)
     canvas.addEventListener('touchmove', function (e) {
       if (currentScreen !== 'playing') return;
-      if (myRole !== 'gunner') return;
       e.preventDefault();
       var now = Date.now();
-      if (now - lastGunnerEmit < 33) return;
-      lastGunnerEmit = now;
+      if (now - lastMouseEmit < 33) return;
+      lastMouseEmit = now;
       var touch = e.touches[0];
       var rect = canvas.getBoundingClientRect();
-      var aimX = (touch.clientX - rect.left) / rect.width;
-      var aimY = (touch.clientY - rect.top) / rect.height;
-      socket.emit('input:gunner', { aimX: aimX, aimY: aimY, shooting: shooting, holdingRepair: holdingRepair });
+      myAim.aimX = (touch.clientX - rect.left) / rect.width;
+      myAim.aimY = (touch.clientY - rect.top) / rect.height;
+      emitInput();
     }, { passive: false });
 
     canvas.addEventListener('touchstart', function (e) {
       if (currentScreen !== 'playing') return;
-      if (myRole !== 'gunner') return;
       e.preventDefault();
       shooting = true;
       var touch = e.touches[0];
       var rect = canvas.getBoundingClientRect();
-      socket.emit('input:gunner', {
-        aimX: (touch.clientX - rect.left) / rect.width,
-        aimY: (touch.clientY - rect.top) / rect.height,
-        shooting: true, holdingRepair: false
-      });
+      myAim.aimX = (touch.clientX - rect.left) / rect.width;
+      myAim.aimY = (touch.clientY - rect.top) / rect.height;
+      emitInput();
     }, { passive: false });
 
     canvas.addEventListener('touchend', function (e) {
-      if (myRole !== 'gunner') return;
       shooting = false;
+      emitInput();
     });
   }
 

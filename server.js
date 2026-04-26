@@ -139,7 +139,8 @@ io.on('connection', (socket) => {
   });
 
   // --------------------------------------------------------------------------
-  // input:pilot
+  // input:pilot — unified payload (WASD + mouse + click + ejectKey).
+  // Server picks which fields to use each tick based on EVA state.
   // --------------------------------------------------------------------------
   socket.on('input:pilot', (input) => {
     const room = findRoomBySocket(socket.id);
@@ -150,12 +151,17 @@ io.on('connection', (socket) => {
       up:    !!input.up,
       down:  !!input.down,
       left:  !!input.left,
-      right: !!input.right
+      right: !!input.right,
+      aimX:         typeof input.aimX === 'number' ? Math.max(0, Math.min(1, input.aimX)) : 0.5,
+      aimY:         typeof input.aimY === 'number' ? Math.max(0, Math.min(1, input.aimY)) : 0.5,
+      shooting:     !!input.shooting,
+      holdingRepair: !!input.holdingRepair,
+      ejectKey:     !!input.ejectKey
     };
   });
 
   // --------------------------------------------------------------------------
-  // input:gunner
+  // input:gunner — unified payload (WASD + mouse + click + ejectKey).
   // --------------------------------------------------------------------------
   socket.on('input:gunner', (input) => {
     const room = findRoomBySocket(socket.id);
@@ -163,10 +169,15 @@ io.on('connection', (socket) => {
     const player = room.players.find(p => p.socketId === socket.id);
     if (!player || player.role !== 'gunner') return;
     room.gunnerInput = {
+      up:    !!input.up,
+      down:  !!input.down,
+      left:  !!input.left,
+      right: !!input.right,
       aimX:         typeof input.aimX === 'number' ? Math.max(0, Math.min(1, input.aimX)) : 0.5,
       aimY:         typeof input.aimY === 'number' ? Math.max(0, Math.min(1, input.aimY)) : 0.5,
       shooting:     !!input.shooting,
-      holdingRepair: !!input.holdingRepair
+      holdingRepair: !!input.holdingRepair,
+      ejectKey:     !!input.ejectKey
     };
   });
 

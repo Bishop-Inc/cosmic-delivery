@@ -41,6 +41,39 @@ class Ship {
 }
 
 // ---------------------------------------------------------------------------
+// EVAPlayer — a crewmate floating in space (ragdoll + jetpack)
+// ---------------------------------------------------------------------------
+class EVAPlayer {
+  constructor(x, y, vx, vy, role) {
+    this.id = nextId();
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.radius = 4;
+    this.rotation = 0;
+    this.angularVelocity = (Math.random() - 0.5) * 8;
+    this.role = role; // 'pilot' | 'gunner'
+    this.boardingTimer = 0;
+    this.ejectTimer = 0;
+    this.driftingFired = false;
+    this.distressFired = false;
+    this.dead = false;
+  }
+
+  update(dt) {
+    // Slight friction so jetpack feels responsive (space dust handwave)
+    this.vx *= Math.pow(0.98, dt * 60);
+    this.vy *= Math.pow(0.98, dt * 60);
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.rotation += this.angularVelocity * dt;
+    this.angularVelocity *= Math.pow(0.95, dt * 60);
+    this.ejectTimer += dt;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Asteroid
 // ---------------------------------------------------------------------------
 class Asteroid {
@@ -358,4 +391,4 @@ class Whale {
   }
 }
 
-module.exports = { Ship, Asteroid, Bullet, Enemy, Powerup, Whale, MiniWhale, nextId };
+module.exports = { Ship, Asteroid, Bullet, Enemy, Powerup, Whale, MiniWhale, EVAPlayer, nextId };

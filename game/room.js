@@ -1,6 +1,6 @@
 'use strict';
 
-const { Ship, Asteroid, Bullet, Enemy, Powerup, Whale, MiniWhale } = require('./entities');
+const { Ship, Asteroid, Bullet, Enemy, Powerup, Whale, MiniWhale, EVAPlayer } = require('./entities');
 const { getSectorConfig, GAME_W, GAME_H } = require('./sectors');
 const { addHighscore } = require('./highscores');
 
@@ -53,6 +53,41 @@ const NAGATORO_LINES = {
     "{gunner} is holding a powerup and just... not using it~ Baka, what are you WAITING for~",
     "Spread shot! {gunner} aimed at nothing with FIVE BULLETS! That takes a special kind of talent~",
     "The powerup is just floating there~ Are you two allergic to winning or something? Oaoaooa~"
+  ],
+  eject: [
+    "{pilot}!! You FLEW out the WINDOW! Oaoaooa~ {gunner}, GO GET THEM~",
+    "Senpaaaai you're literally floating away~ {gunner}, this is your moment, save your dummy~",
+    "Ehehe~ {pilot} just got YEETED by an asteroid~ {gunner}, fly! FLY~",
+    "Hmph! I am NOT writing the apology letter to {pilot}'s mom. {gunner}, hurry~"
+  ],
+  drifting: [
+    "{pilot} is doing little tumbles in space~ It's actually kind of cute, ehehe~",
+    "Oaoaooa~ Senpai, just hold still! {gunner} is COMING~",
+    "{pilot} is making 'help me' faces through the helmet visor~ adorable~",
+    "Hmph! {pilot} flailing in zero-g is the funniest thing I've ever seen~"
+  ],
+  distress: [
+    "{gunner}!! HURRY!! {pilot} is drifting toward the void~ I am NOT joking now~",
+    "S-stop being cool and SAVE THEM, {gunner}~ Oaoaooa~",
+    "{pilot} is getting really small on the screen~ THAT'S BAD, GO GO GO~",
+    "Oaoaooa~ I can't watch~ {gunner}, please please please~"
+  ],
+  rescue: [
+    "Senpai's back~! Don't... don't do that again, baka~",
+    "Oaoaooa~ {gunner} you ABSOLUTE star~ {pilot}, say thank you, properly~",
+    "Crew recovered! Ehehe~ {pilot} owes {gunner} dinner now. I'm taking notes~",
+    "Hmph! I knew you'd save them. ...okay maybe I was a LITTLE worried~"
+  ],
+  lostCrew: [
+    "Senpai... Senpai? ...{pilot}? ...oh no. Oh no no no~",
+    "{pilot} is GONE~ Just... gone~ {gunner}... I'm so sorry~",
+    "We lost crew~ The void took {pilot}~ ehehe... that's not funny is it~",
+    "{gunner}... we tried. We really did. ...let's try again. Together."
+  ],
+  boardingClose: [
+    "Just a little closer~! Don't BUMP them, baka~",
+    "Almost there~ Steady... steady... oaoaooa~",
+    "Slow down {gunner}! You're gonna squish {pilot}~ ehehe~"
   ]
 };
 
@@ -103,6 +138,8 @@ class Room {
     this.bullets = [];
     this.powerups = [];
     this.whale = null;
+    this.pilotEVA = null;
+    this.gunnerEVA = null;
 
     this.score = 0;
     this.sector = 1;
@@ -112,9 +149,14 @@ class Room {
     this.captainMessageTimer = 0;
     this.gamePhase = 'lobby'; // lobby | playing | sectorTransition | death | victory
 
-    // Input state
-    this.pilotInput = { up: false, down: false, left: false, right: false };
-    this.gunnerInput = { aimX: 0.5, aimY: 0.5, shooting: false, holdingRepair: false };
+    // Input state — unified payload from each client. Server picks fields based on EVA state.
+    this.pilotInput  = { up: false, down: false, left: false, right: false,
+                         aimX: 0.5, aimY: 0.5, shooting: false, holdingRepair: false, ejectKey: false };
+    this.gunnerInput = { up: false, down: false, left: false, right: false,
+                         aimX: 0.5, aimY: 0.5, shooting: false, holdingRepair: false, ejectKey: false };
+    this.prevPilotEjectKey = false;
+    this.prevGunnerEjectKey = false;
+    this.boardingDialogueCooldown = 0;
 
     // Timers
     this.bulletCooldown = 0;
@@ -209,10 +251,17 @@ class Room {
     this.bullets = [];
     this.powerups = [];
     this.whale = null;
+    this.pilotEVA = null;
+    this.gunnerEVA = null;
     this.score = 0;
     this.lives = 1;
-    this.pilotInput = { up: false, down: false, left: false, right: false };
-    this.gunnerInput = { aimX: 0.5, aimY: 0.5, shooting: false, holdingRepair: false };
+    this.pilotInput  = { up: false, down: false, left: false, right: false,
+                         aimX: 0.5, aimY: 0.5, shooting: false, holdingRepair: false, ejectKey: false };
+    this.gunnerInput = { up: false, down: false, left: false, right: false,
+                         aimX: 0.5, aimY: 0.5, shooting: false, holdingRepair: false, ejectKey: false };
+    this.prevPilotEjectKey = false;
+    this.prevGunnerEjectKey = false;
+    this.boardingDialogueCooldown = 0;
     this.bulletCooldown = 0;
     this.asteroidSpawnTimer = 0;
     this.enemySpawnTimer = 0;
@@ -307,8 +356,14 @@ class Room {
     this.sectorTimer -= dt;
     this.sectorElapsed += dt;
 
+    // Voluntary eject (rising-edge on E key per role)
+    this.handleVoluntaryEject();
+
     // Move ship
     this.updateShip(dt);
+
+    // EVA bodies (jetpack thrust + drift checks + reboard)
+    this.updateEVA(dt);
 
     // Shooting
     this.updateShooting(dt);
@@ -345,11 +400,17 @@ class Room {
     const FRICTION = 0.92;
     const MAX_SPEED = 300;
 
-    const { up, down, left, right } = this.pilotInput;
-    if (up)    this.ship.vy -= ACCEL * dt;
-    if (down)  this.ship.vy += ACCEL * dt;
-    if (left)  this.ship.vx -= ACCEL * dt;
-    if (right) this.ship.vx += ACCEL * dt;
+    // Pilot drives normally. If pilot is EVA, gunner falls in. If both EVA, ship drifts.
+    const wasdSource =
+      !this.pilotEVA  ? this.pilotInput  :
+      !this.gunnerEVA ? this.gunnerInput : null;
+
+    if (wasdSource) {
+      if (wasdSource.up)    this.ship.vy -= ACCEL * dt;
+      if (wasdSource.down)  this.ship.vy += ACCEL * dt;
+      if (wasdSource.left)  this.ship.vx -= ACCEL * dt;
+      if (wasdSource.right) this.ship.vx += ACCEL * dt;
+    }
 
     // Friction
     this.ship.vx *= Math.pow(FRICTION, dt * 60);
@@ -378,11 +439,17 @@ class Room {
   // -------------------------------------------------------------------------
   updateShooting(dt) {
     this.bulletCooldown -= dt;
-    if (!this.gunnerInput.shooting || this.bulletCooldown > 0) return;
+
+    // Gunner shoots normally. If gunner is EVA, pilot falls in. If both EVA, no shooting.
+    const mouseSource =
+      !this.gunnerEVA ? this.gunnerInput :
+      !this.pilotEVA  ? this.pilotInput  : null;
+
+    if (!mouseSource || !mouseSource.shooting || this.bulletCooldown > 0) return;
 
     const BULLET_SPEED = 400;
-    const aimX = this.gunnerInput.aimX * GAME_W;
-    const aimY = this.gunnerInput.aimY * GAME_H;
+    const aimX = mouseSource.aimX * GAME_W;
+    const aimY = mouseSource.aimY * GAME_H;
     const dx = aimX - this.ship.x;
     const dy = aimY - this.ship.y;
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -404,6 +471,126 @@ class Room {
       this.bullets.push(new Bullet(this.ship.x, this.ship.y, nx * BULLET_SPEED, ny * BULLET_SPEED, false));
     }
     this.bulletCooldown = 0.15;
+  }
+
+  // -------------------------------------------------------------------------
+  // EVA — voluntary eject, jetpack, drift checks, auto-reboard
+  // -------------------------------------------------------------------------
+  handleVoluntaryEject() {
+    // Voluntary eject only allowed in sectors 1-2 (sector 3 keeps lethal stakes
+    // around the whale fight — but we still allow it because the user picked
+    // "voluntary E still allowed" for sector 3). Re-evaluating: spec says
+    // "voluntary E still allowed" in sector 3, so we permit it everywhere.
+    const pilotEdge  = this.pilotInput.ejectKey  && !this.prevPilotEjectKey;
+    const gunnerEdge = this.gunnerInput.ejectKey && !this.prevGunnerEjectKey;
+    if (pilotEdge && !this.pilotEVA) {
+      // Eject straight up-ish from the ship
+      this.ejectShip('pilot', this.ship.x, this.ship.y + 12, 0, 0);
+    }
+    if (gunnerEdge && !this.gunnerEVA) {
+      this.ejectShip('gunner', this.ship.x, this.ship.y - 12, 0, 0);
+    }
+    this.prevPilotEjectKey  = this.pilotInput.ejectKey;
+    this.prevGunnerEjectKey = this.gunnerInput.ejectKey;
+  }
+
+  updateEVA(dt) {
+    if (this.boardingDialogueCooldown > 0) this.boardingDialogueCooldown -= dt;
+
+    const evas = [];
+    if (this.pilotEVA)  evas.push(this.pilotEVA);
+    if (this.gunnerEVA) evas.push(this.gunnerEVA);
+
+    for (const eva of evas) {
+      const input = eva.role === 'pilot' ? this.pilotInput : this.gunnerInput;
+      const ACCEL = 200;
+      if (input.up)    eva.vy -= ACCEL * dt;
+      if (input.down)  eva.vy += ACCEL * dt;
+      if (input.left)  eva.vx -= ACCEL * dt;
+      if (input.right) eva.vx += ACCEL * dt;
+
+      const SPD_MAX = 140;
+      const spd = Math.hypot(eva.vx, eva.vy);
+      if (spd > SPD_MAX) {
+        eva.vx = (eva.vx / spd) * SPD_MAX;
+        eva.vy = (eva.vy / spd) * SPD_MAX;
+      }
+
+      eva.update(dt);
+
+      // Off-screen = lost crew
+      if (eva.x < -30 || eva.x > GAME_W + 30 || eva.y < -30 || eva.y > GAME_H + 30) {
+        return this.loseEVA(eva.role, 'drift');
+      }
+
+      // Throttled drift / distress dialogue
+      if (!eva.driftingFired && eva.ejectTimer > 3) {
+        eva.driftingFired = true;
+        this.setCaptainMessage(getLine('drifting', this.getPilotName(), this.getGunnerName()), 4);
+      }
+      if (!eva.distressFired && eva.ejectTimer > 8) {
+        eva.distressFired = true;
+        this.setCaptainMessage(getLine('distress', this.getPilotName(), this.getGunnerName()), 4);
+      }
+
+      // Auto re-board
+      if (eva.ejectTimer > 0.5) {
+        const dist = Math.hypot(this.ship.x - eva.x, this.ship.y - eva.y);
+        const shipSpd = Math.hypot(this.ship.vx, this.ship.vy);
+        if (dist < 18 && shipSpd < 80) {
+          eva.boardingTimer += dt;
+          if (eva.boardingTimer >= 0.4) {
+            this.rescueEVA(eva.role);
+            return;
+          }
+        } else {
+          eva.boardingTimer = 0;
+          // "boardingClose" hint when ship is near but too fast / not yet in range
+          if (dist < 35 && this.boardingDialogueCooldown <= 0) {
+            this.boardingDialogueCooldown = 6;
+            this.setCaptainMessage(getLine('boardingClose', this.getPilotName(), this.getGunnerName()), 3);
+          }
+        }
+      }
+    }
+  }
+
+  ejectShip(role, hitterX, hitterY, hitterVX = 0, hitterVY = 0) {
+    if (role === 'pilot' && this.pilotEVA) return;
+    if (role === 'gunner' && this.gunnerEVA) return;
+    const dx = this.ship.x - hitterX;
+    const dy = this.ship.y - hitterY;
+    const d = Math.hypot(dx, dy) || 1;
+    const impulse = 220;
+    const evx = (dx / d) * impulse + hitterVX * 0.35 + this.ship.vx * 0.5;
+    const evy = (dy / d) * impulse + hitterVY * 0.35 + this.ship.vy * 0.5;
+    const eva = new EVAPlayer(this.ship.x, this.ship.y, evx, evy, role);
+    if (role === 'pilot') this.pilotEVA = eva;
+    else this.gunnerEVA = eva;
+    // Recoil ship
+    this.ship.vx *= -0.3;
+    this.ship.vy *= -0.3;
+    this.setCaptainMessage(getLine('eject', this.getPilotName(), this.getGunnerName()), 4);
+    this.emitEvent('eject', `${role === 'pilot' ? this.getPilotName() : this.getGunnerName()} ejected!`);
+  }
+
+  rescueEVA(role) {
+    if (role === 'pilot') this.pilotEVA = null;
+    else this.gunnerEVA = null;
+    this.score += 50;
+    this.ship.hasShield = true;
+    this.ship.shieldTimer = Math.max(this.ship.shieldTimer, 2);
+    this.setCaptainMessage(getLine('rescue', this.getPilotName(), this.getGunnerName()), 4);
+    this.emitEvent('rescue', 'Crew recovered!');
+  }
+
+  loseEVA(role, reason) {
+    this.pilotEVA = null;
+    this.gunnerEVA = null;
+    this.lives = 0;
+    this.gamePhase = 'death';
+    this.setCaptainMessage(getLine('lostCrew', this.getPilotName(), this.getGunnerName()), 8);
+    this.emitEvent('eva_lost', `Crew lost (${reason})`);
   }
 
   // -------------------------------------------------------------------------
@@ -607,48 +794,90 @@ class Room {
       }
     }
 
-    // Ship vs asteroids
-    if (!ship.hasShield) {
+    // Ship is invincible to fatal hits while any crew is in EVA — there's no
+    // one (or no one safe) to pilot the rescuer ship if it also dies. Sectors
+    // 1-2 eject instead of killing; sector 3 (whale) keeps lethal stakes.
+    const anyEVA = this.pilotEVA || this.gunnerEVA;
+    const shipVulnerable = !ship.hasShield && !anyEVA;
+
+    if (shipVulnerable) {
+      // Ship vs asteroids
       for (const a of this.asteroids) {
         if (a.dead) continue;
         if (circlesCollide(ship.x, ship.y, ship.radius, a.x, a.y, a.radius)) {
-          this.killShip();
+          if (this.sector < 3) this.ejectShip('pilot', a.x, a.y, a.vx, a.vy);
+          else this.killShip();
           return;
         }
       }
-    }
 
-    // Ship vs enemies
-    if (!ship.hasShield) {
+      // Ship vs enemies
       for (const e of this.enemies) {
         if (e.dead || e.state !== 'attacking') continue;
         if (circlesCollide(ship.x, ship.y, ship.radius, e.x, e.y, e.radius)) {
-          this.killShip();
+          if (this.sector < 3) this.ejectShip('pilot', e.x, e.y, 0, 0);
+          else this.killShip();
           return;
         }
       }
-    }
 
-    // Ship vs enemy bullets
-    if (!ship.hasShield) {
+      // Ship vs enemy bullets
       for (const b of this.bullets) {
         if (b.dead || !b.fromEnemy) continue;
         if (circlesCollide(ship.x, ship.y, ship.radius, b.x, b.y, b.radius)) {
-          this.killShip();
+          if (this.sector < 3) this.ejectShip('pilot', b.x, b.y, b.vx, b.vy);
+          else this.killShip();
           return;
+        }
+      }
+
+      // Ship vs mini-whales (sector 3 only — always lethal)
+      if (this.whale) {
+        for (const mw of this.whale.miniWhales) {
+          if (mw.dead) continue;
+          if (circlesCollide(ship.x, ship.y, ship.radius, mw.x, mw.y, mw.radius)) {
+            this.killShip();
+            return;
+          }
         }
       }
     }
 
-    // Ship vs mini-whales
-    if (!ship.hasShield && this.whale) {
-      for (const mw of this.whale.miniWhales) {
-        if (mw.dead) continue;
-        if (circlesCollide(ship.x, ship.y, ship.radius, mw.x, mw.y, mw.radius)) {
-          this.killShip();
-          return;
+    // EVA crewmates vs world
+    for (const eva of [this.pilotEVA, this.gunnerEVA]) {
+      if (!eva || eva.ejectTimer < 0.5) continue;
+      // Asteroids: bounce, no damage
+      for (const a of this.asteroids) {
+        if (a.dead) continue;
+        if (circlesCollide(eva.x, eva.y, eva.radius, a.x, a.y, a.radius)) {
+          const dx = eva.x - a.x;
+          const dy = eva.y - a.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const nx = dx / d;
+          const ny = dy / d;
+          const push = 100;
+          eva.vx = nx * push + a.vx * 0.4;
+          eva.vy = ny * push + a.vy * 0.4;
+          eva.angularVelocity += (Math.random() - 0.5) * 6;
+          eva.x = a.x + nx * (a.radius + eva.radius + 1);
+          eva.y = a.y + ny * (a.radius + eva.radius + 1);
         }
       }
+      // Enemy bullets: lethal
+      for (const b of this.bullets) {
+        if (b.dead || !b.fromEnemy) continue;
+        if (circlesCollide(eva.x, eva.y, eva.radius, b.x, b.y, b.radius)) {
+          return this.loseEVA(eva.role, 'shot');
+        }
+      }
+      // Enemies (ramming): lethal
+      for (const e of this.enemies) {
+        if (e.dead || e.state !== 'attacking') continue;
+        if (circlesCollide(eva.x, eva.y, eva.radius, e.x, e.y, e.radius)) {
+          return this.loseEVA(eva.role, 'rammed');
+        }
+      }
+      // Player bullets pass through (no friendly fire)
     }
 
     // Ship vs powerups
@@ -749,6 +978,8 @@ class Room {
     this.enemies = [];
     this.bullets = [];
     this.powerups = [];
+    this.pilotEVA = null;
+    this.gunnerEVA = null;
 
     if (sector === 3) {
       this.whale = new Whale();
@@ -853,6 +1084,24 @@ class Room {
       powerups: this.powerups.map(p => ({
         id: p.id, x: p.x, y: p.y, type: p.type, radius: p.radius
       })),
+      pilotEVA: this.pilotEVA ? {
+        x: this.pilotEVA.x, y: this.pilotEVA.y,
+        vx: this.pilotEVA.vx, vy: this.pilotEVA.vy,
+        rotation: this.pilotEVA.rotation,
+        radius: this.pilotEVA.radius,
+        role: this.pilotEVA.role,
+        boardingTimer: this.pilotEVA.boardingTimer,
+        ejectTimer: this.pilotEVA.ejectTimer
+      } : null,
+      gunnerEVA: this.gunnerEVA ? {
+        x: this.gunnerEVA.x, y: this.gunnerEVA.y,
+        vx: this.gunnerEVA.vx, vy: this.gunnerEVA.vy,
+        rotation: this.gunnerEVA.rotation,
+        radius: this.gunnerEVA.radius,
+        role: this.gunnerEVA.role,
+        boardingTimer: this.gunnerEVA.boardingTimer,
+        ejectTimer: this.gunnerEVA.ejectTimer
+      } : null,
       whale: this.whale && !this.whale.dead ? {
         x: this.whale.x,
         y: this.whale.y,
