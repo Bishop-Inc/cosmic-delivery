@@ -14,6 +14,7 @@ class Ship {
     this.vx = 0;
     this.vy = 0;
     this.radius = 10;
+    this.rotation = 0; // radians; lerped toward aim direction
     this.hasShield = false;
     this.shieldTimer = 0;
     this.hasSpreadShot = 0; // remaining spread shots
@@ -34,6 +35,7 @@ class Ship {
     this.y = 135;
     this.vx = 0;
     this.vy = 0;
+    this.rotation = 0;
     this.hasShield = false;
     this.shieldTimer = 0;
     this.hasSpreadShot = 0;
@@ -51,8 +53,9 @@ class EVAPlayer {
     this.vx = vx;
     this.vy = vy;
     this.radius = 4;
-    this.rotation = 0;
-    this.angularVelocity = (Math.random() - 0.5) * 8;
+    this.rotation = Math.random() * Math.PI * 2; // start at random angle
+    // Dramatic initial spin so the eject looks like a proper "yeet"
+    this.angularVelocity = (Math.random() < 0.5 ? -1 : 1) * (12 + Math.random() * 10);
     this.role = role; // 'pilot' | 'gunner'
     this.boardingTimer = 0;
     this.ejectTimer = 0;
@@ -62,13 +65,14 @@ class EVAPlayer {
   }
 
   update(dt) {
-    // Slight friction so jetpack feels responsive (space dust handwave)
-    this.vx *= Math.pow(0.98, dt * 60);
-    this.vy *= Math.pow(0.98, dt * 60);
+    // Light friction — keeps jetpack responsive AND lets ragdoll spin linger
+    this.vx *= Math.pow(0.985, dt * 60);
+    this.vy *= Math.pow(0.985, dt * 60);
     this.x += this.vx * dt;
     this.y += this.vy * dt;
     this.rotation += this.angularVelocity * dt;
-    this.angularVelocity *= Math.pow(0.95, dt * 60);
+    // Angular friction lower than velocity friction so they keep tumbling
+    this.angularVelocity *= Math.pow(0.97, dt * 60);
     this.ejectTimer += dt;
   }
 }

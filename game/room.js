@@ -431,6 +431,26 @@ class Room {
     this.ship.x = Math.max(this.ship.radius, Math.min(GAME_W - this.ship.radius, this.ship.x));
     this.ship.y = Math.max(this.ship.radius, Math.min(GAME_H - this.ship.radius, this.ship.y));
 
+    // Smooth rotation toward gunner aim (or pilot aim if gunner is EVA).
+    // Falls back to velocity direction when ship is moving, or holds if both EVA.
+    const aimSource =
+      !this.gunnerEVA ? this.gunnerInput :
+      !this.pilotEVA  ? this.pilotInput  : null;
+    let targetRot = this.ship.rotation;
+    if (aimSource) {
+      const ax = aimSource.aimX * GAME_W - this.ship.x;
+      const ay = aimSource.aimY * GAME_H - this.ship.y;
+      if (ax * ax + ay * ay > 9) targetRot = Math.atan2(ay, ax);
+    } else if (Math.hypot(this.ship.vx, this.ship.vy) > 30) {
+      targetRot = Math.atan2(this.ship.vy, this.ship.vx);
+    }
+    let diff = targetRot - this.ship.rotation;
+    while (diff > Math.PI)  diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    const ROT_SPEED = 14; // rad/s — snappy but smooth
+    const maxStep = ROT_SPEED * dt;
+    this.ship.rotation += Math.max(-maxStep, Math.min(maxStep, diff));
+
     this.ship.update(dt);
   }
 
@@ -509,7 +529,9 @@ class Room {
       if (input.left)  eva.vx -= ACCEL * dt;
       if (input.right) eva.vx += ACCEL * dt;
 
-      const SPD_MAX = 140;
+      // Higher cap so the eject "fly-away" reads as dramatic; jetpack itself can't
+      // exceed 140 of its own thrust because ACCEL=200 gets bled by friction.
+      const SPD_MAX = 240;
       const spd = Math.hypot(eva.vx, eva.vy);
       if (spd > SPD_MAX) {
         eva.vx = (eva.vx / spd) * SPD_MAX;
@@ -561,15 +583,16 @@ class Room {
     const dx = this.ship.x - hitterX;
     const dy = this.ship.y - hitterY;
     const d = Math.hypot(dx, dy) || 1;
-    const impulse = 220;
-    const evx = (dx / d) * impulse + hitterVX * 0.35 + this.ship.vx * 0.5;
-    const evy = (dy / d) * impulse + hitterVY * 0.35 + this.ship.vy * 0.5;
+    // Big "yeet" impulse so they fly away dramatically
+    const impulse = 340;
+    const evx = (dx / d) * impulse + hitterVX * 0.45 + this.ship.vx * 0.6;
+    const evy = (dy / d) * impulse + hitterVY * 0.45 + this.ship.vy * 0.6;
     const eva = new EVAPlayer(this.ship.x, this.ship.y, evx, evy, role);
     if (role === 'pilot') this.pilotEVA = eva;
     else this.gunnerEVA = eva;
-    // Recoil ship
-    this.ship.vx *= -0.3;
-    this.ship.vy *= -0.3;
+    // Recoil ship harder + add a little ship spin
+    this.ship.vx *= -0.4;
+    this.ship.vy *= -0.4;
     this.setCaptainMessage(getLine('eject', this.getPilotName(), this.getGunnerName()), 4);
     this.emitEvent('eject', `${role === 'pilot' ? this.getPilotName() : this.getGunnerName()} ejected!`);
   }
@@ -846,7 +869,7 @@ class Room {
     // EVA crewmates vs world
     for (const eva of [this.pilotEVA, this.gunnerEVA]) {
       if (!eva || eva.ejectTimer < 0.5) continue;
-      // Asteroids: bounce, no damage
+      // Asteroids: bounce hard + add big roll for the "rolling ragdoll" gag
       for (const a of this.asteroids) {
         if (a.dead) continue;
         if (circlesCollide(eva.x, eva.y, eva.radius, a.x, a.y, a.radius)) {
@@ -855,10 +878,14 @@ class Room {
           const d = Math.hypot(dx, dy) || 1;
           const nx = dx / d;
           const ny = dy / d;
-          const push = 100;
-          eva.vx = nx * push + a.vx * 0.4;
-          eva.vy = ny * push + a.vy * 0.4;
-          eva.angularVelocity += (Math.random() - 0.5) * 6;
+          // Push scales with asteroid size — bigger rocks send you flying further
+          const push = 160 + a.radius * 4;
+          eva.vx = nx * push + a.vx * 0.6;
+          eva.vy = ny * push + a.vy * 0.6;
+          // Big spin kick. Keep sign consistent with existing rotation so it
+          // accelerates the tumble rather than awkwardly fighting it.
+          const spinKick = 14 + Math.random() * 10;
+          eva.angularVelocity += (eva.angularVelocity >= 0 ? 1 : -1) * spinKick;
           eva.x = a.x + nx * (a.radius + eva.radius + 1);
           eva.y = a.y + ny * (a.radius + eva.radius + 1);
         }
@@ -1067,6 +1094,7 @@ class Room {
         y: this.ship.y,
         vx: this.ship.vx,
         vy: this.ship.vy,
+        rotation: this.ship.rotation,
         hasShield: this.ship.hasShield,
         hasSpreadShot: this.ship.hasSpreadShot
       },

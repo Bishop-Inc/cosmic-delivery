@@ -296,11 +296,11 @@
   /* -------------------------
      DRAW HELPERS
   ------------------------- */
-  function drawShip(x, y, hasShield, flashWhite) {
+  function drawShip(x, y, hasShield, flashWhite, rotation) {
     ctx.save();
     ctx.translate(Math.round(x), Math.round(y));
 
-    // Shield — pink ring instead of blue
+    // Shield is rotation-independent (drawn before rotate so it stays a clean ring)
     if (hasShield) {
       ctx.beginPath();
       ctx.arc(0, 0, 12, 0, Math.PI * 2);
@@ -310,6 +310,8 @@
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
+
+    ctx.rotate(rotation || 0);
 
     // Body — softer rounded triangle, pink palette
     ctx.strokeStyle = flashWhite ? '#ffffff' : '#f0c4e8';
@@ -360,26 +362,58 @@
       ctx.restore();
     }
 
-    // Body — chibi astronaut, tumbling
+    // Body — chibi astronaut, tumbling, with flailing limbs
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(eva.rotation || 0);
-    // Suit (torso)
+
+    // Limb swing: stronger when spinning fast, never zero so it always wiggles
+    var spinMag = Math.min(20, Math.abs(eva.angularVelocity || 0));
+    var flailRate = 10 + spinMag * 0.6;
+    var flailAmp = 0.7 + Math.min(1.4, spinMag * 0.08);
+    var flailT = (eva.ejectTimer || 0) * flailRate;
+
+    // Arms — pivot at shoulders
     ctx.fillStyle = '#ff6b9d';
+    ctx.save();
+    ctx.translate(-2, 1);
+    ctx.rotate(Math.sin(flailT) * flailAmp - 0.5);
+    ctx.fillRect(-2, 0, 2, 3);
+    ctx.restore();
+    ctx.save();
+    ctx.translate(2, 1);
+    ctx.rotate(-Math.sin(flailT + 0.7) * flailAmp + 0.5);
+    ctx.fillRect(0, 0, 2, 3);
+    ctx.restore();
+
+    // Legs — pivot at hips
+    ctx.save();
+    ctx.translate(-1, 4);
+    ctx.rotate(Math.sin(flailT + Math.PI) * flailAmp * 0.8);
+    ctx.fillRect(-1, 0, 1.5, 3);
+    ctx.restore();
+    ctx.save();
+    ctx.translate(1, 4);
+    ctx.rotate(-Math.sin(flailT + Math.PI + 0.5) * flailAmp * 0.8);
+    ctx.fillRect(-0.5, 0, 1.5, 3);
+    ctx.restore();
+
+    // Torso (drawn last so limbs sit behind it)
     ctx.fillRect(-2, 1, 4, 3);
-    // Limbs
-    ctx.fillRect(-4, 0, 2, 2);
-    ctx.fillRect(2, 0, 2, 2);
-    ctx.fillRect(-2, 4, 1, 2);
-    ctx.fillRect(1, 4, 1, 2);
+
     // Helmet
     ctx.fillStyle = '#f0c4e8';
     ctx.beginPath();
-    ctx.arc(0, -1, 2.5, 0, Math.PI * 2);
+    ctx.arc(0, -1, 2.8, 0, Math.PI * 2);
     ctx.fill();
     // Visor
     ctx.fillStyle = '#1a0d2e';
-    ctx.fillRect(-1.5, -1.5, 3, 1);
+    ctx.fillRect(-1.7, -1.6, 3.4, 1.1);
+    // Visor highlight
+    ctx.fillStyle = '#ff6b9d';
+    ctx.globalAlpha = 0.6;
+    ctx.fillRect(-1.4, -1.4, 0.6, 0.5);
+    ctx.globalAlpha = 1;
     ctx.restore();
 
     // Boarding progress arc (green) when in pickup zone
@@ -985,7 +1019,7 @@
     // Ship
     if (state.ship) {
       var flashWhite = state.ship._flashWhite || false;
-      drawShip(state.ship.x, state.ship.y, state.ship.hasShield, flashWhite);
+      drawShip(state.ship.x, state.ship.y, state.ship.hasShield, flashWhite, state.ship.rotation);
     }
 
     // EVA crewmates (drawn after ship so they're on top when overlapping at re-board)
