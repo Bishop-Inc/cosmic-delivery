@@ -431,23 +431,16 @@ class Room {
     this.ship.x = Math.max(this.ship.radius, Math.min(GAME_W - this.ship.radius, this.ship.x));
     this.ship.y = Math.max(this.ship.radius, Math.min(GAME_H - this.ship.radius, this.ship.y));
 
-    // Smooth rotation toward gunner aim (or pilot aim if gunner is EVA).
-    // Falls back to velocity direction when ship is moving, or holds if both EVA.
-    const aimSource =
-      !this.gunnerEVA ? this.gunnerInput :
-      !this.pilotEVA  ? this.pilotInput  : null;
+    // Ship orients like a car — nose follows velocity vector. Bullets still
+    // fire toward the gunner's mouse independently, so aim stays decoupled.
+    // Holds last rotation when stationary so it doesn't snap to center.
     let targetRot = this.ship.rotation;
-    if (aimSource) {
-      const ax = aimSource.aimX * GAME_W - this.ship.x;
-      const ay = aimSource.aimY * GAME_H - this.ship.y;
-      if (ax * ax + ay * ay > 9) targetRot = Math.atan2(ay, ax);
-    } else if (Math.hypot(this.ship.vx, this.ship.vy) > 30) {
-      targetRot = Math.atan2(this.ship.vy, this.ship.vx);
-    }
+    const shipSpd = Math.hypot(this.ship.vx, this.ship.vy);
+    if (shipSpd > 25) targetRot = Math.atan2(this.ship.vy, this.ship.vx);
     let diff = targetRot - this.ship.rotation;
     while (diff > Math.PI)  diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    const ROT_SPEED = 14; // rad/s — snappy but smooth
+    const ROT_SPEED = 12; // rad/s — smooth car-like turn
     const maxStep = ROT_SPEED * dt;
     this.ship.rotation += Math.max(-maxStep, Math.min(maxStep, diff));
 
